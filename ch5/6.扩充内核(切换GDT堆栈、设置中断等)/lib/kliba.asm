@@ -2,14 +2,18 @@
 ; 程序说明：kernel的哭函数文件
 ; 修改日期：2019.11.29
 
-[SECTION .data]
-disp_pos    dd  0                                        ; 显示的起始玩位置
-
+;[SECTION .data]
+;disp_pos    dd  0                                        ; 显示的起始玩位置
+;现在这个当前显示位置的全局变量不再在这里汇编里定义，而是统一在global.h中定义
+;这里只要导入一下这个全局变量即可
+extern disp_pos
 [SECTION .text]
 
 ; 导出函数
 global  disp_str
-
+global	out_byte
+global	in_byte
+global	disp_color_str
 ; ========================================================================
 ;                  void disp_str(char * info);
 ; ========================================================================
@@ -51,6 +55,45 @@ disp_str:
 	pop	ebp
 	ret
 
+; ========================================================================
+;                  void disp_color_str(char * info, int color);
+;					其实也就比disp_str多传入一个color的属性参数
+; ========================================================================
+disp_color_str:
+	push	ebp
+	push	ebx
+	mov	ebp, esp
+
+	mov	esi, [ebp + 12]	; pszInfo
+	mov	edi, [disp_pos]
+	mov	ah, [ebp + 16]	; color
+.1:
+	lodsb
+	test	al, al
+	jz	.2
+	cmp	al, 0Ah	; 是回车吗?
+	jnz	.3
+	push	eax
+	mov	eax, edi
+	mov	bl, 160
+	div	bl
+	and	eax, 0FFh
+	inc	eax
+	mov	bl, 160
+	mul	bl
+	mov	edi, eax
+	pop	eax
+	jmp	.1
+.3:
+	mov	[gs:edi], ax
+	add	edi, 2
+	jmp	.1
+
+.2:
+	mov	[disp_pos], edi
+	pop	ebx
+	pop	ebp
+	ret
 
 
 ; ========================================================================

@@ -6,13 +6,14 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
-
+#include "proto.h"
+#include "string.h"
+#include "global.h"
 //要调用的两个asm函数的声明,挪动到统一存放声明的头文件proto.h和string.h中
 //PUBLIC  void*   memcpy(void* pDst, void*  pSrc, int iSize);     //涉及到指针的，用void具体再强转
 //PUBLIC void disp_str(char *pszInfo);
 
-PUBLIC  u8  gdt_ptr[6];	/* 0~15:Limit  16~47:Base */
-PUBLIC  DESCRIPTOR  gdt[GDT_SIZE];
+
 
 PUBLIC  void cstart()
 {
@@ -33,6 +34,15 @@ PUBLIC  void cstart()
 	u32* p_gdt_base  = (u32*)(&gdt_ptr[2]);
 	*p_gdt_limit = GDT_SIZE * sizeof(DESCRIPTOR) - 1;
 	*p_gdt_base  = (u32)&gdt;
+	
+	// 更新idt_ptr的内容:先获取指针再借助指针修改
+	/* idt_ptr[6] 共 6 个字节：0~15:Limit  16~47:Base。用作 sidt/lidt 的参数。*/
+	u16* p_idt_limit = (u16*)(&idt_ptr[0]);
+	u32* p_idt_base  = (u32*)(&idt_ptr[2]);
+	*p_idt_limit = IDT_SIZE * sizeof(GATE) - 1;
+	*p_idt_base  = (u32)&idt;
+
+	init_prot();		//进行保护模式相关的初始化：包括初始化8259设置IDT
 
 	disp_str("-----\"cstart\" ends-----\n");
 }

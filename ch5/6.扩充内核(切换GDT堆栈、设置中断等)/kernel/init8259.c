@@ -41,8 +41,18 @@ PUBLIC void init_8259A()
 	out_byte(INT_S_CTLMASK,	0x1);
 
 	/* Master 8259, OCW1.  */
-	out_byte(INT_M_CTLMASK,	0xFF);
+	out_byte(INT_M_CTLMASK,	0xFD);		// 0xFF改成0xFD，打开了键盘中断
 
 	/* Slave  8259, OCW1.  */
-	out_byte(INT_S_CTLMASK,	0xFF);
+	out_byte(INT_S_CTLMASK,	0xFD);		// 0xFF改成0xFD，打开了键盘中断
+
+
+}
+
+
+PUBLIC	void spurious_irq(int irq) 
+{
+	disp_str("spurious_irq: ");
+	disp_int(irq);
+	disp_str("\n");
 }
