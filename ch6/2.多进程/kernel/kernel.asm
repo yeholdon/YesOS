@@ -10,7 +10,7 @@ extern	spurious_irq
 extern	disp_str
 
 extern	kernel_main						;	// 内核主函数
-
+extern	clock_handler
 ; 导入全局变量
 extern  gdt_ptr
 extern	idt_ptr
@@ -151,13 +151,15 @@ hwint00:                ; Interrupt routine for irq 0 (the clock).
 		mov	esp, StackTop											;切换到内核栈， 堆栈在bss段中，放到后面，保证重入时不切换内核栈
 		sti	;开中断，后面是中断例程功能部分
 
-		push	clock_int_msg
-		call	disp_str
+		;进程调度
+		push 0
+		call clock_handler
 		add	esp, 4		; 调用者恢复堆栈
 
 		cli
 
 		mov	esp, [p_proc_ready]								;离开内核栈，回到进程表
+		lldt [esp + P_LDT_SEL]
 		; 设置tss.esp0，位于进程表的最高处
 		lea	eax, [esp + P_STACKTOP]						
 		mov	dword	[tss + TSS3_S_SP0], eax		;栈顶指针存进tss，之后能从TSS中直接得到ring0下的esp值tss.esp0

@@ -77,7 +77,7 @@ typedef struct s_tss {
 #define	SELECTOR_FLAT_RW	0x10		// ┃
 #define	SELECTOR_VIDEO		(0x18+3)	// ┛<-- RPL=3
 
-#define	SELECTOR_LDT_FIRST	0x28	//LDT的选择子
+#define	SELECTOR_LDT_FIRST	0x28	//LDT的选择子，这个只是被指明出来的默认第一个进程
 
 #define	SELECTOR_TSS	0x20
 

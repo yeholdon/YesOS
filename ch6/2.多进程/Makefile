@@ -25,7 +25,7 @@ DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
 YESBOOT	= boot/boot.bin boot/loader.bin
 YESKERNEL	= kernel.bin
 OBJS		= kernel/kernel.o kernel/start.o kernel/init8259.o  \
-						kernel/global.o kernel/protect.o  kernel/main.o \
+						kernel/global.o kernel/protect.o  kernel/main.o kernel/clock.o \
 						lib/klib.o lib/kliba.o lib/string.o
 DASMOUTPUT	= kernel.bin.asm
 
@@ -90,6 +90,9 @@ kernel/global.o : kernel/global.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/protect.o : kernel/protect.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/clock.o: kernel/clock.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 lib/klib.o : lib/klib.c

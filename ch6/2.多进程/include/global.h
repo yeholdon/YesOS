@@ -27,4 +27,5 @@ EXTERN  TSS tss;
 extern  PROCESS proc_table[];
 extern  char    task_stack[];
 
+extern  TASK    task_table[];
 #endif

@@ -54,6 +54,9 @@ typedef struct s_task {
 
 #define NR_TASKS    2   // 进程数，先改成2个
 #define STACK_SIZE_TESTA    0x8000
-#define STACK_SIZE_TOTAL    STACK_SIZE_TESTA
+#define STACK_SIZE_TESTB	0x8000
+// 多个进程的栈的总大小
+#define STACK_SIZE_TOTAL	(STACK_SIZE_TESTA + \
+				STACK_SIZE_TESTB)
 
 #endif
