@@ -6,7 +6,7 @@
 #ifndef _YE_PROC_H_
 #define _YE_PROC_H_
 
-#include "global.h" // 严谨来讲，这里用到了global.h里的宏定义LDT_SIZE就应该包含其头文件
+//#include "global.h" // 严谨来讲，这里用到了global.h里的宏定义LDT_SIZE就应该包含其头文件
                                         // 但是因为实际上.h不是编译单元，只是在预编译的时候插入源文件开头的
                                         // 所以只要包含这个头文件的源文件里在这个头文件之前包含了global.h头文件即可
 

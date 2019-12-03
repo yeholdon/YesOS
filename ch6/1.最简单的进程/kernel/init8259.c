@@ -41,11 +41,10 @@ PUBLIC void init_8259A()
 	out_byte(INT_S_CTLMASK,	0x1);
 
 	/* Master 8259, OCW1.  */
-	out_byte(INT_M_CTLMASK,	0xFD);		// 0xFF改成0xFD，打开了键盘中断
+	out_byte(INT_M_CTLMASK,	0xFE);		// 之前0xFF改成0xFD，打开了键盘中断，现在打开时钟中断
 
 	/* Slave  8259, OCW1.  */
-	out_byte(INT_S_CTLMASK,	0xFD);		// 0xFF改成0xFD，打开了键盘中断
-
+	out_byte(INT_S_CTLMASK,	0xFF);		// 之前0xFF改成0xFD，打开了键盘中断，现在关掉
 
 }
 

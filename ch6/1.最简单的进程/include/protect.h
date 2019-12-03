@@ -32,6 +32,35 @@ typedef struct s_gate
 	u16	offset_high;	/* Offset High */
 }GATE;
 
+typedef struct s_tss {
+	u32	backlink;
+	u32	esp0;	/* stack pointer to use during interrupt */
+	u32	ss0;	/*   "   segment  "  "    "        "     */
+	u32	esp1;
+	u32	ss1;
+	u32	esp2;
+	u32	ss2;
+	u32	cr3;
+	u32	eip;
+	u32	flags;
+	u32	eax;
+	u32	ecx;
+	u32	edx;
+	u32	ebx;
+	u32	esp;
+	u32	ebp;
+	u32	esi;
+	u32	edi;
+	u32	es;
+	u32	cs;
+	u32	ss;
+	u32	ds;
+	u32	fs;
+	u32	gs;
+	u32	ldt;
+	u16	trap;
+	u16	iobase;	/* I/O位图基址大于或等于TSS段界限，就表示没有I/O许可位图 */
+}TSS;
 
 /* GDT */
 /* 描述符索引 */
@@ -39,6 +68,9 @@ typedef struct s_gate
 #define	INDEX_FLAT_C		1	// ┣ LOADER 里面已经确定了的.
 #define	INDEX_FLAT_RW		2	// ┃
 #define	INDEX_VIDEO		3	// ┛
+#define	INDEX_TSS	4
+#define	INDEX_LDT_FIRST	5
+
 /* 选择子 */
 #define	SELECTOR_DUMMY		   0		// ┓
 #define	SELECTOR_FLAT_C		0x08		// ┣ LOADER 里面已经确定了的.
@@ -46,6 +78,8 @@ typedef struct s_gate
 #define	SELECTOR_VIDEO		(0x18+3)	// ┛<-- RPL=3
 
 #define	SELECTOR_LDT_FIRST	0x28	//LDT的选择子
+
+#define	SELECTOR_TSS	0x20
 
 #define	SELECTOR_KERNEL_CS	SELECTOR_FLAT_C
 #define	SELECTOR_KERNEL_DS	SELECTOR_FLAT_RW
@@ -110,5 +144,10 @@ typedef struct s_gate
 /* 中断向量 ，这俩的用处暂时不知道*/
 #define	INT_VECTOR_IRQ0			0x20
 #define	INT_VECTOR_IRQ8			0x28
+
+
+/* 宏 */
+/* 线性地址 → 物理地址 , 这里还是简单的相加*/
+#define vir2phys(seg_base, vir)	(u32)(((u32)seg_base) + (u32)(vir))
 
 #endif /* _YE_PROTECT_H_ */

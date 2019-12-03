@@ -1,18 +1,28 @@
 
 ; 内核段选择子CS=Core Segment，TI=RPL=0
-SELECTOR_KERNEL_CS  equ 8
+;SELECTOR_KERNEL_CS  equ 8			;已经放入sconst.inc
+%include	"sconst.inc"
 
 ; 导入函数调用别人的，c语言函数
 extern  cstart
 extern	exception_handler
 extern	spurious_irq
+extern	disp_str
 
-extern	kernel_main;	// 内核主函数
+extern	kernel_main						;	// 内核主函数
 
 ; 导入全局变量
 extern  gdt_ptr
 extern	idt_ptr
 extern	disp_pos		;这个定义在kliba.asm中
+extern	p_proc_ready
+extern	tss
+extern	disp_pos
+extern	k_reenter		;防止时钟中断嵌套造成问题
+
+; 中断例程使用
+[SECTION .data]
+clock_int_msg		db	"^", 0
 
 [SECTION .bss]      ; Block Started by Symbol
 StackSpace	resb	2*1024
@@ -20,6 +30,8 @@ StackTop:
 
 [SECTION .text]		; 代码
 global _start	;导出_start让链接器知道入口
+
+global	restart
 
 ; 导出这些中断处理函数名，以供C调用
 global	divide_error
@@ -95,6 +107,11 @@ csinit:
 	;jmp	0x40:0
 	;sti					;置位IF打开中断
 	;hlt					;切换工作完成
+
+	xor	eax, eax
+	mov ax, SELECTOR_TSS
+	ltr	ax;
+
 	jmp	kernel_main
 
 
@@ -110,7 +127,51 @@ csinit:
 
 ALIGN   16
 hwint00:                ; Interrupt routine for irq 0 (the clock).
-        hwint_master    0
+        ; 下面开始修改时钟中断处理程序
+		sub	esp, 4			; 跳过retaddr
+		pushad
+		push	ds
+		push	es
+		push	fs
+		push	gs
+		mov	dx, ss	;让ds和es指向与ss相同的段
+		mov	ds, dx
+		mov	es, dx
+
+		;mov	esp, StackTop											;切换到内核栈， 堆栈在bss段中
+
+		inc	byte [gs:0]			;改变屏幕首个字符测试一下效果
+		mov	al, EOI
+		out INT_M_CTL, al	; master 8259
+
+		inc	dword [k_reenter]
+		cmp	dword [k_reenter], 0
+		jne	.re_enter					; 重入时跳过功能部分，直接返回
+
+		mov	esp, StackTop											;切换到内核栈， 堆栈在bss段中，放到后面，保证重入时不切换内核栈
+		sti	;开中断，后面是中断例程功能部分
+
+		push	clock_int_msg
+		call	disp_str
+		add	esp, 4		; 调用者恢复堆栈
+
+		cli
+
+		mov	esp, [p_proc_ready]								;离开内核栈，回到进程表
+		; 设置tss.esp0，位于进程表的最高处
+		lea	eax, [esp + P_STACKTOP]						
+		mov	dword	[tss + TSS3_S_SP0], eax		;栈顶指针存进tss，之后能从TSS中直接得到ring0下的esp值tss.esp0
+
+.re_enter:		; 如果(k_reenter != 0)，会跳转到这里
+		dec	dword [k_reenter]
+		pop	gs
+		pop	fs
+		pop	es
+		pop	ds
+		popad
+		add	esp, 4
+
+		iretd
 
 ALIGN   16
 hwint01:                ; Interrupt routine for irq 1 (keyboard)
@@ -246,3 +307,27 @@ exception:
 	; 处理完，根据C调用规则，调用放恢复堆栈
 	add	esp, 4*2	; 让栈顶指向 EIP，堆栈中从顶向下依次是：EIP、CS、EFLAGS
 	hlt							; 暂时没往下写的时候就hlt
+
+
+
+
+; ====================================================================================
+;                                   restart：做好准备，并加载一个进程
+; ====================================================================================
+restart:
+	; 目标ring1代码的cs\eip\ss\esp都是从堆栈得到的，这里的堆栈先手动设置成了进程表的起始地址
+	mov esp, [p_proc_ready]
+	lldt	[esp+P_LDT_SEL]
+	lea	eax, [esp + P_STACKTOP]
+	mov	dword	[tss + TSS3_S_SP0], eax		;栈顶指针存进tss，之后能从TSS中直接得到ring0下的esp值tss.esp0
+
+
+	pop	gs
+	pop	fs
+	pop	es
+	pop	ds
+	popad
+
+	add	esp, 4
+
+	iretd
