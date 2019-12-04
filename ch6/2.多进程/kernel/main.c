@@ -89,7 +89,7 @@ void TestA()
 
 void TestB()
 {
-    int i = 0;
+    int i = 0x1000;
     while (1)
     {
         disp_str("B");
