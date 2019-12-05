@@ -184,7 +184,7 @@ hwint00:                ; Interrupt routine for irq 0 (the clock).
 	; 再打开时钟中断
 	; 原来是没有禁止，但是在clock_handler里判断是否的时钟中断重入，现在其实clock_handler里可以不用判断了
 	in	al, INT_M_CTLMASK
-	or	al, 1
+	and	al, 0xFE
 	out	INT_M_CTLMASK, al
 	;----------------------------------------
 
