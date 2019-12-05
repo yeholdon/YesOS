@@ -19,6 +19,13 @@
 PUBLIC void clock_handler(int irq)
 {
 	disp_str("#");
+
+    // 现在无论是否重入都会执行clock_handler所以要在函数里区分
+    if(k_reenter != 0) {
+        disp_str("!");      // 输出一个！来提示是否是中断重入
+        return;                 // 重入的就直接返回，不切换进程
+    }
+
     p_proc_ready++;
     if(p_proc_ready >= proc_table + NR_TASKS)
     {

@@ -62,7 +62,7 @@ PUBLIC  int kernel_main()
 		selector_ldt += 1 << 3;
 	}
 
-	k_reenter = -1;
+	k_reenter = 0;			// 为了统一，现在在第一个进程执行前，也让k_reenter自增了，所以这里k_reenter初值要改一下
 
 	p_proc_ready	= proc_table; //一个指向下一个要启动进程的进程表的指针，在kernel.asm中导入使用
 	restart();                                          // kernel.asm中的函数

@@ -127,53 +127,89 @@ csinit:
 
 ALIGN   16
 hwint00:                ; Interrupt routine for irq 0 (the clock).
+	call	save				;注释的部分包含保存现场和重入与否的分支都并入save
         ; 下面开始修改时钟中断处理程序
-		sub	esp, 4			; 跳过retaddr
-		pushad
-		push	ds
-		push	es
-		push	fs
-		push	gs
-		mov	dx, ss	;让ds和es指向与ss相同的段
-		mov	ds, dx
-		mov	es, dx
+		; sub	esp, 4			; 跳过retaddr
+		; pushad
+		; push	ds
+		; push	es
+		; push	fs
+		; push	gs
+		; mov	dx, ss	;让ds和es指向与ss相同的段
+		; mov	ds, dx
+		; mov	es, dx
 
 		;mov	esp, StackTop											;切换到内核栈， 堆栈在bss段中
 
-		inc	byte [gs:0]			;改变屏幕首个字符测试一下效果
-		mov	al, EOI
-		out INT_M_CTL, al	; master 8259
+	;----------------------------------------
+	; 关时钟中断，这是调整后新加的, 进一步禁止时钟中断的重入，但是允许其他中断的重入
+	; 原来是没有禁止，但是在clock_handler里判断是否的时钟中断重入，现在其实clock_handler里可以不用判断了
+	in	al, INT_M_CTLMASK
+	or	al, 1
+	out	INT_M_CTLMASK, al
+	;----------------------------------------
 
-		inc	dword [k_reenter]
-		cmp	dword [k_reenter], 0
-		jne	.re_enter					; 重入时跳过功能部分，直接返回
 
-		mov	esp, StackTop											;切换到内核栈， 堆栈在bss段中，放到后面，保证重入时不切换内核栈
-		sti	;开中断，后面是中断例程功能部分
+	inc	byte [gs:0]			;改变屏幕首个字符测试一下效果
+	mov	al, EOI					; 注意这个是允许这次中断结束后下次时钟中断还能被响应(但在这个中断处理程序中中断是关闭的，也就是无法嵌套)
+	out INT_M_CTL, al	; master 8259
 
-		;进程调度
-		push 0
-		call clock_handler
-		add	esp, 4		; 调用者恢复堆栈
+; 		inc	dword [k_reenter]
+; 		cmp	dword [k_reenter], 0
+; 		; jne	.re_enter					; 重入时跳过功能部分，直接返回
+; 		jne		.1									; 原来发生中断重入的时候不执行clock_handler现在总执行，所以clock_handler也得区分是否重入
+	
+; 		mov	esp, StackTop											;切换到内核栈， 堆栈在bss段中，放到后面，保证重入时不切换内核栈
 
-		cli
+; 		; push	.restart_v2														; 通过push传递参数再用ret转移到不同位置
+; 		push	restart
+; 		jmp 	.2
+; .1:		
+; 		; push	.restart_reenter_v2
+; 		push	restart_reenter
+; .2:
 
-		mov	esp, [p_proc_ready]								;离开内核栈，回到进程表
-		lldt [esp + P_LDT_SEL]
-		; 设置tss.esp0，位于进程表的最高处
-		lea	eax, [esp + P_STACKTOP]						
-		mov	dword	[tss + TSS3_S_SP0], eax		;栈顶指针存进tss，之后能从TSS中直接得到ring0下的esp值tss.esp0
+	; 但此时，时钟中断已经被关了， 所以后面的部分不会再被时钟中断重入。但前面的sav
+	sti	;开中断，后面是中断例程功能部分, 因为cpu响应中断的时候会自动关闭中断 
 
-.re_enter:		; 如果(k_reenter != 0)，会跳转到这里
-		dec	dword [k_reenter]
-		pop	gs
-		pop	fs
-		pop	es
-		pop	ds
-		popad
-		add	esp, 4
+	;进程调度
+	push 0
+	call clock_handler
+	add	esp, 4		; 调用者恢复堆栈
 
-		iretd
+	cli
+
+
+	;----------------------------------------
+	; 再打开时钟中断
+	; 原来是没有禁止，但是在clock_handler里判断是否的时钟中断重入，现在其实clock_handler里可以不用判断了
+	in	al, INT_M_CTLMASK
+	or	al, 1
+	out	INT_M_CTLMASK, al
+	;----------------------------------------
+
+
+	ret				;新加的，通过ret+参数的形式进行分支转移
+
+; 和restart一致，可以合并成一段
+; .restart_v2	
+; 		mov	esp, [p_proc_ready]								;离开内核栈，回到进程表
+; 		lldt [esp + P_LDT_SEL]
+; 		; 设置tss.esp0，位于进程表的最高处
+; 		lea	eax, [esp + P_STACKTOP]						
+; 		mov	dword	[tss + TSS3_S_SP0], eax		;栈顶指针存进tss，之后能从TSS中直接得到ring0下的esp值tss.esp0
+
+; .restart_reenter_v2:
+; ;.re_enter:		; 如果(k_reenter != 0)，会跳转到这里
+; 		dec	dword [k_reenter]
+; 		pop	gs
+; 		pop	fs
+; 		pop	es
+; 		pop	ds
+; 		popad
+; 		add	esp, 4
+
+; 		iretd
 
 ALIGN   16
 hwint01:                ; Interrupt routine for irq 1 (keyboard)
@@ -312,10 +348,43 @@ exception:
 
 
 
+; ====================================================================================
+;                                   save：进一步模块化，把前面的保存现场和刚刚写好的后面的是否重入分支统一到save
+; ====================================================================================
+save:
+	; sub	esp, 4			; 跳过retaddr			这个已经由call自动入栈，无需手动跳过
+	pushad
+	push	ds
+	push	es
+	push	fs
+	push	gs
+	mov	dx, ss	;让ds和es指向与ss相同的段
+	mov	ds, dx
+	mov	es, dx
+
+	mov		eax, esp		; eax = 进程表起始地址，用来通过进程表项来从save函数返回
+
+	;	是否重入的判断和解决也在save里解决，注意重入不单单指时钟中断重入时钟中断，还有别的中断重入时钟中断
+	; 但是只要是重入，k_reenter都会被更新。所以clock_handler里判断是否重入暂时还是有必要的，为了识别别的中断的重入。
+	inc	dword	[k_reenter]
+	cmp	dword	[k_reenter], 0
+	jne		.1
+	mov	esp, StackTop		; 非重入
+	push	restart
+	jmp	[eax + RETADR - P_STACKBASE]
+
+.1:
+	push	restart_reenter
+	jmp	[eax + RETADR - P_STACKBASE]
+
+
+
+
 
 ; ====================================================================================
 ;                                   restart：做好准备，并加载一个进程
 ; ====================================================================================
+; 现在看这一段其实和中断处理程序的后半段restart_v2和restart_reenter_v2是一样的，可以合并
 restart:
 	; 目标ring1代码的cs\eip\ss\esp都是从堆栈得到的，这里的堆栈先手动设置成了进程表的起始地址
 	mov esp, [p_proc_ready]
@@ -323,7 +392,8 @@ restart:
 	lea	eax, [esp + P_STACKTOP]
 	mov	dword	[tss + TSS3_S_SP0], eax		;栈顶指针存进tss，之后能从TSS中直接得到ring0下的esp值tss.esp0
 
-
+restart_reenter:
+	dec		dword	[k_reenter]			;为了统一第一个进程启动和进程调度的情况添加的
 	pop	gs
 	pop	fs
 	pop	es
