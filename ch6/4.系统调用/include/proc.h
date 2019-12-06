@@ -52,7 +52,7 @@ typedef struct s_task {
 
 
 
-#define NR_TASKS    3   // 进程数，先改成2个
+#define NR_TASKS    1  // 进程数，先改成2个
 #define STACK_SIZE_TESTA    0x8000
 #define STACK_SIZE_TESTB	0x8000
 #define STACK_SIZE_TESTC	0x8000
