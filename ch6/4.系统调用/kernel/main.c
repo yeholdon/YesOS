@@ -65,7 +65,6 @@ PUBLIC  int kernel_main()
 	k_reenter = 0;			// 为了统一，现在在第一个进程执行前，也让k_reenter自增了，所以这里k_reenter初值要改一下
     ticks = 0;  
 	p_proc_ready	= proc_table; //一个指向下一个要启动进程的进程表的指针，在kernel.asm中导入使用
-	
 
     // 初始化8253 PIT
     out_byte(TIMER_MODE, RATE_GENERATOR);   // 模式2
