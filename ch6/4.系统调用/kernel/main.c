@@ -65,6 +65,11 @@ PUBLIC  int kernel_main()
 	put_irq_handler(CLOCK_IRQ, clock_handler);   //设定时钟中断处理程序 
 	enable_irq(CLOCK_IRQ);										         //让8259A可以接收时钟中断 
 
+    // 初始化8253 PIT
+    out_byte(TIMER_MODE, RATE_GENERATOR);   // 模式2
+    out_byte(TIMER0, (u8) (TIMER_FREQ/HZ));         // low byte
+    out_byte(TIMER0, (u8) ((TIMER_FREQ/HZ) >> 8));  // high byte
+
 	k_reenter = 0;			// 为了统一，现在在第一个进程执行前，也让k_reenter自增了，所以这里k_reenter初值要改一下
 
 	p_proc_ready	= proc_table; //一个指向下一个要启动进程的进程表的指针，在kernel.asm中导入使用
@@ -82,12 +87,11 @@ void TestA()
     while (1)
     {
         // 在进程A里调用系统调用get_ticks()
-        int ret = get_ticks();
         disp_str("A");
         //disp_int(i++);
-        disp_int(ret);
+        disp_int(get_ticks());
         disp_str(".");
-        delay(1);
+        milli_delay(1000);
     }
     
 }
@@ -99,9 +103,9 @@ void TestB()
     while (1)
     {
         disp_str("B");
-        //disp_int(i++);
+        disp_int(get_ticks());
         disp_str(".");
-        delay(1);
+        milli_delay(1000);
     }
     
 }
@@ -113,9 +117,9 @@ void TestC()
     while (1)
     {
         disp_str("C");
-        //disp_int(i++);
+        disp_int(get_ticks());
         disp_str(".");
-        delay(1);
+        milli_delay(1000);
     }
     
 }

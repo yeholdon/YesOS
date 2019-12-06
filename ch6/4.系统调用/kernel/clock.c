@@ -21,7 +21,7 @@ PUBLIC void clock_handler(int irq)
 	disp_str("#");
 
     ticks++;            // 这个是新加的
-    
+
     // 现在无论是否重入都会执行clock_handler所以要在函数里区分
     if(k_reenter != 0) {
         disp_str("!");      // 输出一个！来提示是否是中断重入
@@ -34,3 +34,15 @@ PUBLIC void clock_handler(int irq)
         p_proc_ready = proc_table;
     }
 }
+
+
+/*======================================================================*
+                              milli_delay: accuracy = 10ms
+ *======================================================================*/
+PUBLIC void milli_delay(int milli_sec)
+{
+        int t = get_ticks();
+
+        while(((get_ticks() - t) * 1000 / HZ) < milli_sec) {}
+}
+

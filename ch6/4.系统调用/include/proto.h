@@ -35,7 +35,7 @@ PUBLIC void spurious_irq(int irq);
 
 /* clock.c */
 PUBLIC void clock_handler(int irq);
-
+PUBLIC  void    milli_delay(int milli_delay);
 
 /* 以下是系统调用相关 */
 /* proc.c */
