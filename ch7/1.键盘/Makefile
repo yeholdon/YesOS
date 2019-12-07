@@ -26,7 +26,7 @@ YESBOOT	= boot/boot.bin boot/loader.bin
 YESKERNEL	= kernel.bin
 OBJS		= kernel/kernel.o kernel/syscall.o  kernel/keyboard.o kernel/start.o kernel/init8259.o  \
 						kernel/proc.o kernel/global.o kernel/protect.o  kernel/main.o kernel/clock.o \
-						kernel/tty.o \
+						kernel/tty.o kernel/console.o\
 						lib/klib.o lib/kliba.o lib/string.o
 DASMOUTPUT	= kernel.bin.asm
 
@@ -119,4 +119,7 @@ kernel/keyboard.o: kernel/keyboard.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/tty.o : kernel/tty.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+kernel/console.o : kernel/console.c
 	$(CC) $(CFLAGS) -o $@ $<

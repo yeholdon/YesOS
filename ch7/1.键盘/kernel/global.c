@@ -12,6 +12,8 @@
 #include "proto.h"
 #include  "proc.h"
 #include "global.h"
+#include "tty.h"
+#include "console.h"
 
 PUBLIC  PROCESS proc_table[NR_TASKS];
 
@@ -26,3 +28,7 @@ PUBLIC	TASK	task_table[NR_TASKS] = { {task_tty, STACK_SIZE_TTY, "tty"}, 	// 得�
 PUBLIC	irq_handler irq_table[NR_IRQ];		// 声明在global.h中。NR_IRQ=16，以对应主从两个8259A，定义在const.h中
 
 PUBLIC	system_call	sys_call_table[NR_SYS_CALL] = {sys_get_ticks};  // 只有一个，这里就不用专门的函数给它赋值了
+
+PUBLIC	TTY	tty_table[NR_CONSOLES]; 
+PUBLIC	CONSOLE	console_table[NR_CONSOLES];		// 目前为止，tty和console是一一对应的
+

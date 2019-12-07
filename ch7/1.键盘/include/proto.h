@@ -3,7 +3,11 @@
  * 程序功能：存放各个主要函数的声明
  * 修改日期：2019.11.28
  */
+#ifndef _YES_PROTO_H_
+#define _YES_PROTO_H_
 
+#include "tty.h"
+#include "console.h"
 // kliba.asm
 PUBLIC void	out_byte(u16 port, u8 value);
 PUBLIC u8	in_byte(u16 port);
@@ -40,7 +44,7 @@ PUBLIC  void    init_clock();
 /* keyboard.c */
 PUBLIC void keyboard_handler(int irq);
 PUBLIC void init_keyboard();
-PUBLIC  void keyboard_read();
+PUBLIC  void keyboard_read(TTY *p_tty);
 
 /* clock.c */
 PUBLIC void clock_handler(int irq);
@@ -56,3 +60,10 @@ PUBLIC  int     get_ticks();
 
 /* tty */
 PUBLIC  void task_tty();
+PUBLIC  void in_process(TTY *p_tty, u32 key);
+/* console */
+PUBLIC int is_curent_console(CONSOLE *);
+PUBLIC void out_char(CONSOLE *p_con, char ch);
+PUBLIC void init_screen(TTY *p_tty);
+PUBLIC  void select_console(int nr_console);
+#endif

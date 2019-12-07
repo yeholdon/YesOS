@@ -15,7 +15,7 @@
 #define NR_SCAN_CODES	0x80	/* Number of scan codes (rows in keymap) */
 
 #define FLAG_BREAK	0x0080		/* Break Code			*/
-#define FLAG_EXT	0x0100		/* Normal function keys		*/
+#define FLAG_EXT	0x0100		/* Normal function keys	, 所有不可打印字符的宏定义中，都加了它	*/
 #define FLAG_SHIFT_L	0x0200		/* Shift key			*/
 #define FLAG_SHIFT_R	0x0400		/* Shift key			*/
 #define FLAG_CTRL_L	0x0800		/* Control key			*/

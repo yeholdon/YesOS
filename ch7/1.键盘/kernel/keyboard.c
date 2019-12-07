@@ -6,6 +6,8 @@
 #include "type.h"
 #include "const.h"
 #include "protect.h"
+#include "console.h"
+#include "tty.h"
 #include "proto.h"
 #include  "proc.h"
 #include "global.h"
@@ -27,7 +29,7 @@ PRIVATE	int	num_lock;	/* Num Lock	 */
 PRIVATE	int	scroll_lock;	/* Scroll Lock	 */
 PRIVATE	int	column;
 
-
+PRIVATE u8  get_byte_from_kbbuf();
 
 /*======================================================================*
                            keyboard_handler:键盘中断处理函数
@@ -64,7 +66,7 @@ PUBLIC  void init_keyboard()
 /*======================================================================*
                            keyboard_read:键盘输入缓冲区读取函数
  *======================================================================*/
-PUBLIC  void keyboard_read() 
+PUBLIC  void keyboard_read(TTY *p_tty) 
 {
     u8 scan_code;
     int make;           // TRUE: make ; FALSE :break
@@ -77,33 +79,79 @@ PUBLIC  void keyboard_read()
 
     if (kb_in.count > 0)
     {
-        // 操作缓冲区前先关闭中断
-        disable_int();          //定义在kliba.asm里
-        scan_code = *(kb_in.p_tail);
-        kb_in.p_tail++;
-        if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES)
-        {
-            kb_in.p_tail = kb_in.buf;
-        }
-        kb_in.count--;
+        code_with_E0 = 0;
 
-        enable_int(); //处理完缓冲区，恢复中断
+        scan_code = get_byte_from_kbbuf();
 
         // disp_int(scan_code);        //暂时打印一下，看是否调用成功
         // 下面开始解析扫描码
         if (scan_code == 0xE1)
         {
-            // 暂时空着
+            // 以0xE1 开头的只有Pause键，一个键共6个码
+            u8 pause_break_code[] = {0xE1, 0x1D, 0x45, 
+                                                                    0xE1, 0x9D, 0xC5};
+            int is_pause_break = 1;
+            // 下面开始循环读取接下来的5个码，一旦有一个不符合就说明不匹配
+            for (int i = 1; i < 6; i++)
+            {
+                if (get_byte_from_kbbuf() != pause_break_code[i])
+                {
+                    is_pause_break = 0;
+                    break;
+                }
+                
+            }
+            
         }
         else if (scan_code == 0xE0)
         {
-            // 
+            // 0xE0开头的只有Print screen键是make和break都是4个码，特殊判断
+            scan_code = get_byte_from_kbbuf();
+
+            // PrintScreen被按下, Make码
+            if (scan_code == 0xB7)
+            {
+                if (get_byte_from_kbbuf() == 0xE0)
+                {
+                    if (get_byte_from_kbbuf() == 0x37)
+                    {
+                        key = PRINTSCREEN; //连着4个码都符合，才确定是PrintScreen
+                        make = TRUE;                // make 码
+                    }
+                    
+                }
+                
+            }
+
+            // PrintScreen被释放，Break码
+            if (scan_code == 0xB7)
+            {
+                if (get_byte_from_kbbuf() == 0xE0)
+                {
+                    if (get_byte_from_kbbuf() == 0xAA)
+                    {
+                        key = PRINTSCREEN;
+                        make = FALSE;
+                    }
+                    
+                }
+                
+            }
+            
+            // 除去PrintScreen的情况，剩下的0xE0开头的码都是make和break各两个，可以统一处理
+            if (key == 0)
+            {
+                // 通过全局变量来标识，说明是非PrintScreen和shift的非可打印字符
+                code_with_E0 = 1;
+            }
+            
             
         }
-        else
+        
+        if ((key != PAUSEBREAK) && (key != PRINTSCREEN))
         {
             // 处理可打印字符
-            // 先是无需组合键的小写字符
+            // 先是无需组合键的小写字符，组合键的情况还是要多次调用keyboard_read()，也没啥关系
             
 			// 首先判断Make Code 还是 Break Code 
 			make = (scan_code & FLAG_BREAK ? 0 : 1);
@@ -125,40 +173,47 @@ PUBLIC  void keyboard_read()
 			switch(key) {
 			case SHIFT_L:
 				shift_l = make;
-				key = 0;
 				break;
 			case SHIFT_R:
 				shift_r = make;
-				key = 0;
 				break;
 			case CTRL_L:
 				ctrl_l = make;
-				key = 0;
 				break;
 			case CTRL_R:
 				ctrl_r = make;
-				key = 0;
 				break;
 			case ALT_L:
 				alt_l = make;
-				key = 0;
 				break;
 			case ALT_R:
 				alt_l = make;
-				key = 0;
 				break;
 			default:
-				if (!make) {	// 如果是 Break Code , 忽略它
-					key = 0;	
-				}
+                /* 放到后面统一处理 */
+				// if (!make) {	// 如果是 Break Code , 忽略它。
+				// 	key = 0;	
+				// }
 				break;
 			}
 
-			// 如果 Key 不为0说明是可打印字符，否则不做处理 
-			if(key){
-				output[0] = key;
-				disp_str(output);
+            if (make)       // Break码忽略
+            {
+                // 因为非可打印字符得到的码不是ascci码，而key是32位的，ascii码只有8位，
+                // 所以其他位可以用来标识剩下的非可打印字符，这里对于非可打印字符统一用宏FLAG_EXT进一步标识
+                // 剩下的shift、ctrl等键的状态，则是直接通过或操作，添加到常规字符key中除了8位ASCII码和1位FLAG_EXT外的那些位上。
+                // 加shift的这种组合键还是要调用两次keyboard_read()来完成的，毕竟按了两个键
+                key |= shift_l ? FLAG_SHIFT_L : 0;
+                key |= shift_r ? FLAG_SHIFT_R : 0;
+                key |= ctrl_l	? FLAG_CTRL_L	: 0;
+				key |= ctrl_r	? FLAG_CTRL_R	: 0;
+				key |= alt_l	? FLAG_ALT_L	: 0;
+				key |= alt_r	? FLAG_ALT_R	: 0;
+
+                // 完成后，可打印字符和非可打印字符统一用一个in_process函数统一处理
+                in_process(p_tty, key);         // in_process也得加标识当前tty的参数
             }
+            
             
         }
         
@@ -166,4 +221,31 @@ PUBLIC  void keyboard_read()
         
     }
     
+}
+
+
+/*======================================================================*
+                           get_byte_from_kbbuf:从键盘输入缓冲区读取一个字符
+ *======================================================================*/
+PRIVATE u8 get_byte_from_kbbuf() 
+{
+
+    u8 scan_code;
+    // 调用时可能缓冲区为空，因为这个部分用单独了任务实现了，所以可以循环等待字符的输入
+    while (kb_in.count <= 0)
+    {
+    }
+    
+    // 缓冲区非空
+    disable_int();
+
+    scan_code = *(kb_in.p_tail);
+    kb_in.p_tail++;
+    if (kb_in.p_tail == kb_in.buf + KB_IN_BYTES)
+    {
+        kb_in.p_tail = kb_in.buf;
+    }
+    kb_in.count--;
+    enable_int();       // 这种成对的就先写好，容易忘
+    return scan_code;
 }

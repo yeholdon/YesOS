@@ -7,6 +7,8 @@
 #define _GLOBAL_H_
 
 #include "proc.h"
+#include "tty.h"
+#include "console.h"
 /* EXTERN is defined as extern except in global.c */
 #ifdef	GLOBAL_VARIABLES_HERE
 #undef	EXTERN
@@ -25,6 +27,9 @@ EXTERN  u32 k_reenter;
 
 EXTERN  PROCESS *p_proc_ready;
 EXTERN  TSS tss;
+
+EXTERN	int		nr_current_console;
+
 // 定义global.c里, 这里声明过后才能在别的地方引用
 extern  PROCESS proc_table[];
 extern  char    task_stack[];
@@ -34,5 +39,8 @@ extern  TASK    task_table[];
 extern  irq_handler irq_table[];
 
 extern  system_call sys_call_table[NR_SYS_CALL];
+
+extern	TTY	tty_table[NR_CONSOLES]; 
+extern	CONSOLE	console_table[NR_CONSOLES];	
 
 #endif
