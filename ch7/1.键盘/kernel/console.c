@@ -18,6 +18,8 @@
 
 PRIVATE void set_cursor(unsigned int position);
 PRIVATE void set_video_start_addr(u32 addr);
+PRIVATE void auto_scroll_screen(CONSOLE *p_con);
+PRIVATE void flush(CONSOLE* p_con);
 /*======================================================================*
                          select_console:根据参数指定的console切换控制台
  *======================================================================*/
@@ -53,13 +55,64 @@ PRIVATE void set_video_start_addr(u32 addr)
  *======================================================================*/
 PUBLIC void out_char(CONSOLE *p_con, char ch)
 {
-    // V_MEM_BASE在const.h中定义为0xB8000即显存的起始地址，因为现在只有一个console，所以就是直接的加上disp_pos
-    // 后面如果有多个，就要修改了
+    // V_MEM_BASE在const.h中定义为0xB8000即显存的起始地址
     u8  *p_vmem = (u8 *)(V_MEM_BASE + p_con->cursor * 2);
-    *p_vmem++ = ch;
-    *p_vmem++ = DEFAULT_CHAR_COLOR;
-    p_con->cursor++;
-    set_cursor(p_con->cursor );
+    // 自动滚屏到输入光标位置
+    auto_scroll_screen(p_con);
+
+    switch (ch)
+    {
+    case '\n' :
+        if (p_con->cursor < (p_con->original_addr + p_con->v_mem_limit - SCREEN_WIDTH)) // 没到CONSOLE的最后一行
+        {
+            p_con->cursor = p_con->original_addr + SCREEN_WIDTH * 
+                                                                                                ((p_con->cursor - p_con->original_addr) / SCREEN_WIDTH + 1);
+            
+        }
+        break;
+    case '\b':
+        if (p_con->cursor > p_con->original_addr)
+        {
+            p_con->cursor--;
+            *(p_vmem - 2) = ' ';
+            *(p_vmem - 1) = DEFAULT_CHAR_COLOR;
+        }
+        break;
+    default:    // default就是常规字符显示
+        if (p_con->cursor < p_con->original_addr + p_con->v_mem_limit - 1)
+        {
+            *p_vmem++ = ch;
+            *p_vmem++ = DEFAULT_CHAR_COLOR;
+            p_con->cursor++;
+        }
+        break;
+    }
+    auto_scroll_screen(p_con);
+    flush(p_con);
+}
+
+
+/*======================================================================*
+                           flush
+*======================================================================*/
+PRIVATE void flush(CONSOLE* p_con)
+{
+        set_cursor(p_con->cursor);
+        set_video_start_addr(p_con->current_start_addr);
+}
+
+/*======================================================================*
+			    auto_scroll_screen(CONSOLE *p_con)：自动滚屏到输入光标位置
+ *======================================================================*/
+PRIVATE void auto_scroll_screen(CONSOLE *p_con)
+{
+    if(p_con->current_start_addr + SCREEN_SIZE <= p_con->cursor) {
+        int rows = (p_con->cursor - (p_con->current_start_addr + SCREEN_SIZE )) / SCREEN_WIDTH + 1; 
+        for (int i = 0; i < rows; i++)
+        {
+            scroll_screen(p_con, SCR_DOWN);
+        }
+    }
 }
 
 
@@ -120,4 +173,37 @@ PUBLIC void init_screen(TTY *p_tty)
         out_char(p_tty->p_console, '$');                    // 再显示一个命令提示符
     }
     set_cursor(p_tty->p_console->cursor);           // 光标也初始化
+}
+
+
+/*======================================================================*
+                          scroll_screen:滚动屏幕，按一下，滚动一行，直到到达边界
+ *======================================================================*/
+PUBLIC  void    scroll_screen(CONSOLE *p_con, int direction)
+{
+    if (direction == SCR_UP)
+    {
+        if (p_con->current_start_addr > p_con->original_addr)
+        {
+            p_con->current_start_addr -= SCREEN_WIDTH;
+        }
+        
+    }
+    else if (direction == SCR_DOWN)
+    {
+        if (p_con->current_start_addr + SCREEN_SIZE < p_con->original_addr + p_con->v_mem_limit)
+        {
+            p_con->current_start_addr += SCREEN_WIDTH;
+        }
+        
+    }
+    else
+    {
+        // 其他按键，没有反应
+    }
+
+    // CONSOLE结构里的项都要用set函数写入相应寄存器才能生效
+    set_video_start_addr(p_con->current_start_addr);
+    set_cursor(p_con->cursor);                                                  // 不要忘了光标
+    
 }

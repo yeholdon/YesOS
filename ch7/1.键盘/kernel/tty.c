@@ -20,7 +20,7 @@
 PRIVATE void init_tty(TTY    *p_tty) ;
 PRIVATE void tty_do_read(TTY *p_tty) ;
 PRIVATE void tty_do_write(TTY* p_tty);
-
+PRIVATE void put_key(TTY *p_tty, u32 key) ;
 /*======================================================================*
                            task_tty:tty任务
  *======================================================================*/
@@ -112,16 +112,7 @@ PUBLIC  void    in_process(TTY *p_tty, u32  key)
         output[0] = key & 0xFF;     // 可打印字符只取8位，至于shift是在取column的时候就考虑进去了，取到的就是对应的加了shift的字符
         // disp_str(output);   
         // 这时就不是在这里直接显示了，而是存入tty的缓冲区
-        if (p_tty->inbuf_count < TTY_IN_BYTES) {
-            *(p_tty->p_inbuf_head) = key;
-            p_tty->p_inbuf_head++;
-            if (p_tty->p_inbuf_head == p_tty->in_buf + TTY_IN_BYTES) {
-                p_tty->p_inbuf_head = p_tty->in_buf;
-            }
-            p_tty->inbuf_count++;
-        }
-        
-        
+        put_key(p_tty, key);
 
         // 屏幕显示操作
         // disable_int();
@@ -137,19 +128,20 @@ PUBLIC  void    in_process(TTY *p_tty, u32  key)
         int raw_code = key & MASK_RAW; // MASK_RAW = 0x1FFh功能按键的掩码
         switch (raw_code)
         {
+        case ENTER:
+            put_key(p_tty, '\n');       
+            break;
+        case BACKSPACE:
+            put_key(p_tty, '\b');
+            break;
         case UP:
             if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-                disable_int();
-                out_byte(CRTC_ADDR_REG, START_ADDR_H);
-                out_byte(CRTC_DATA_REG, ((80*15) >> 8) & 0xFF); // 滚半屏
-                out_byte(CRTC_ADDR_REG, START_ADDR_L);
-                out_byte(CRTC_DATA_REG, ((80*15) & 0xFF));
-                enable_int();
+                scroll_screen(p_tty->p_console, SCR_UP);
             }
             break;
         case DOWN:
             if ((key & FLAG_SHIFT_L) || (key & FLAG_SHIFT_R)) {
-                // shift +down暂时啥也不做
+                scroll_screen(p_tty->p_console, SCR_DOWN);
             }
             break;
 		case F1:
@@ -157,18 +149,27 @@ PUBLIC  void    in_process(TTY *p_tty, u32  key)
 		case F3:
 		case F4:
 		case F5:
+
 		case F6:
+
 		case F7:
+
 		case F8:
 		case F9:
+            select_console(0);
+            break;
 		case F10:
+            select_console(1);
+            break;
 		case F11:
+            select_console(2);
+            break;
 		case F12:
             /* Alt + F1~F12 */
 			if ((key & FLAG_ALT_L) || (key & FLAG_ALT_R)) {
 				select_console(raw_code - F1);
 			}
-            out_char(p_tty->p_console, '#');
+            // out_char(p_tty->p_console, '#');
 			break;
         default:
             break;
@@ -176,4 +177,20 @@ PUBLIC  void    in_process(TTY *p_tty, u32  key)
     }
     
     // 暂时只显示可打印字符以及其和shift的组合字符，其他的非可打印的功能性键暂时还不做出反应
+}
+
+
+/*======================================================================*
+                          put_key:往tty缓冲区加控制字符\n等
+ *======================================================================*/
+PRIVATE void put_key(TTY *p_tty, u32 key) 
+{
+    if (p_tty->inbuf_count < TTY_IN_BYTES) {
+        *(p_tty->p_inbuf_head) = key;
+        p_tty->p_inbuf_head++;
+        if (p_tty->p_inbuf_head == p_tty->in_buf + TTY_IN_BYTES) {
+            p_tty->p_inbuf_head = p_tty->in_buf;
+        }
+        p_tty->inbuf_count++;
+    }
 }
