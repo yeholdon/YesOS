@@ -67,7 +67,7 @@ PRIVATE void init_tty(TTY    *p_tty)
  *======================================================================*/
 PRIVATE void tty_do_read(TTY *p_tty) 
 {
-    if (is_curent_console(p_tty->p_console))
+    if (is_current_console(p_tty->p_console))
     {
         // 当前console是当前轮询到的TTY对应的console时才读取键盘缓冲区
         // 因为要知道当前的tty，也就是调用该函数的tty，这样才能知道将读到的内容存到哪个tty的缓冲区

@@ -132,7 +132,7 @@ void TestA()
 		// disp_color_str("A.", BRIGHT | MAKE_COLOR(BLACK, RED));
 		// disp_int(get_ticks());
 		printf("<Ticks : %x>", get_ticks());
-		milli_delay(200);
+		milli_delay(2000);
 	}
 }
 
@@ -146,7 +146,7 @@ void TestB()
 		// disp_color_str("B.", BRIGHT | MAKE_COLOR(BLACK, RED));
 		// disp_int(get_ticks());
 		printf("B");
-		milli_delay(200);
+		milli_delay(2000);
 	}
 }
 
@@ -159,8 +159,8 @@ void TestC()
 	while(1){
 		// disp_color_str("C.", BRIGHT | MAKE_COLOR(BLACK, RED));
 		// disp_int(get_ticks());
-		printf("B");
-		milli_delay(200);
+		printf("C");
+		milli_delay(2000);
 	}
 }
 

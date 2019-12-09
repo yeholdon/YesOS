@@ -15,7 +15,7 @@ int vsprintf(char *buf, const char *fmt, va_list args)
 {
     char *p;
     char tmp[256];
-    va_list p_next_arg;         // 为了能够更好地说明这个遍变量的用途，才用了va_list
+    va_list p_next_arg = args;         // 为了能够更好地说明这个遍变量的用途，才用了va_list
 
     for (p = buf; *fmt; fmt++) {
         // p是分解出来后保存的目标缓冲区的指针，fmt是被分解的源字符串的指针

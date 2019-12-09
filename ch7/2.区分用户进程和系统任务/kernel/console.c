@@ -20,6 +20,7 @@ PRIVATE void set_cursor(unsigned int position);
 PRIVATE void set_video_start_addr(u32 addr);
 PRIVATE void auto_scroll_screen(CONSOLE *p_con);
 PRIVATE void flush(CONSOLE* p_con);
+PUBLIC int  is_current_console(CONSOLE *p_con);
 /*======================================================================*
                          select_console:根据参数指定的console切换控制台
  *======================================================================*/
@@ -33,8 +34,7 @@ PUBLIC  void select_console(int nr_console)
 
     nr_current_console = nr_console;     // 全局变量更新
 
-    set_cursor(console_table[nr_console].cursor);
-    set_video_start_addr(console_table[nr_console].current_start_addr);
+    flush(&console_table[nr_console]);
 }
 
 /*======================================================================*
@@ -97,8 +97,10 @@ PUBLIC void out_char(CONSOLE *p_con, char ch)
 *======================================================================*/
 PRIVATE void flush(CONSOLE* p_con)
 {
-        set_cursor(p_con->cursor);
-        set_video_start_addr(p_con->current_start_addr);
+	if (is_current_console(p_con)) {                // 是当前控制台再刷新显示，将p_con的信息通过写寄存器更新到显卡
+		set_cursor(p_con->cursor);
+		set_video_start_addr(p_con->current_start_addr);
+	}
 }
 
 /*======================================================================*
@@ -143,7 +145,7 @@ PRIVATE void set_cursor(unsigned int position)
 /*======================================================================*
                           is_current_console:判断当前console是否为当前轮询到的tty对应的console
  *======================================================================*/
-PUBLIC int  is_curent_console(CONSOLE *p_con)
+PUBLIC int  is_current_console(CONSOLE *p_con)
 {
     return (p_con == &console_table[nr_current_console]);
 }
@@ -215,7 +217,7 @@ PUBLIC  void    scroll_screen(CONSOLE *p_con, int direction)
     }
 
     // CONSOLE结构里的项都要用set函数写入相应寄存器才能生效
-    set_video_start_addr(p_con->current_start_addr);
-    set_cursor(p_con->cursor);                                                  // 不要忘了光标
-    
+    // set_video_start_addr(p_con->current_start_addr);
+    // set_cursor(p_con->cursor);                                                  // 不要忘了光标
+    flush(p_con);
 }
