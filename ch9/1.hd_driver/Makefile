@@ -27,8 +27,9 @@ YESKERNEL	= kernel.bin
 OBJS		= kernel/kernel.o kernel/syscall.o  kernel/keyboard.o kernel/start.o kernel/init8259.o  \
 						kernel/proc.o kernel/global.o kernel/protect.o  kernel/main.o kernel/clock.o \
 						kernel/tty.o kernel/console.o kernel/systask.o \
-						kernel/printf.o kernel/vsprintf.o\
-						lib/klib.o lib/kliba.o lib/string.o lib/misc.o 
+						kernel/printf.o kernel/vsprintf.o kernel/hd.o \
+						lib/klib.o lib/kliba.o lib/string.o lib/misc.o \
+						fs/main.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -130,10 +131,16 @@ kernel/tty.o : kernel/tty.c
 kernel/console.o : kernel/console.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+kernel/hd.o: kernel/hd.c
+	$(CC) $(CFLAGS) -o $@ $<
 
 #### C库函数
 kernel/printf.o : kernel/printf.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 kernel/vsprintf.o : kernel/vsprintf.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+#### 文件系统
+fs/main.o: fs/main.c
 	$(CC) $(CFLAGS) -o $@ $<

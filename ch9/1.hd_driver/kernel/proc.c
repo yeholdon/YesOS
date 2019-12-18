@@ -567,6 +567,39 @@ PRIVATE int msg_receive(PROCESS* current, int src, MESSAGE* m)
 }
 
 
+/*****************************************************************************
+ *                                inform_int
+ *****************************************************************************/
+/**
+ * <Ring 0> Inform a proc that an interrupt has occured.
+ * 
+ * @param task_nr  The task which will be informed.
+ *****************************************************************************/
+PUBLIC void inform_int(int task_nr)
+{
+	PROCESS *p = proc_table + task_nr;
+
+	if ((p->p_flags & RECEIVING) && //该进程被阻塞，"& RECEIVING"表示进程因为RECEVING没完成而阻塞
+	    ((p->p_recvfrom == INTERRUPT) || (p->p_recvfrom == ANY))) { // 进程具体等待接收的是中断消息
+		p->p_msg->source = INTERRUPT;
+		p->p_msg->type = HARD_INT;
+		p->p_msg = 0;
+		p->has_int_msg = 0;
+		p->p_flags &= ~RECEIVING; /* dest has received the msg 取消掉体现在p_flags上的阻塞原因*/
+		p->p_recvfrom = NO_TASK;
+		assert(p->p_flags == 0);
+		unblock(p);						// 解除阻塞函数，实际已经通过设置p_flags位完成了
+
+		assert(p->p_flags == 0);
+		assert(p->p_msg == 0);
+		assert(p->p_recvfrom == NO_TASK);
+		assert(p->p_sendto == NO_TASK);
+	}
+	else {
+		p->has_int_msg = 1;
+	}
+}
+
 
 /* 
 核心文件（core file），也称核心转储（core dump），是操作系统在进程收到某些信号而终止运行时，

@@ -21,6 +21,7 @@ PUBLIC  void disable_irq(int irq);  // 按照常理，这俩应该在这里声�
 PUBLIC  void enable_irq(int irq);
 PUBLIC  void enable_int();
 PUBLIC  void disable_int();
+PUBLIC void	port_read(u16 port, void* buf, int n);
 
 // protect.c
 PUBLIC void	init_prot();
@@ -66,10 +67,10 @@ PUBLIC	int	    sys_printx(int _unused1, int _unused2, char* s, struct s_proc * p
 PUBLIC	void*	va2la(int pid, void* va);   
 PUBLIC	int	ldt_seg_linear(struct s_proc* p, int idx);
 PUBLIC	void	reset_msg(MESSAGE* p);
-// PUBLIC	void	dump_msg(const char * title, MESSAGE* m);
-// PUBLIC	void	dump_proc(struct proc * p);
+PUBLIC	void	dump_msg(const char * title, MESSAGE* m);
+PUBLIC	void	dump_proc(struct s_proc * p);
 PUBLIC	int	send_recv(int function, int src_dest, MESSAGE* msg);
-
+PUBLIC void	inform_int(int task_nr);
 
 /* lib/misc.c */
 PUBLIC void spin(char * func_name);
@@ -87,6 +88,13 @@ PUBLIC  int sendrec(int function, int src_dest, MESSAGE *p_msg);
 /* system task */
 PUBLIC void task_sys();
 
+/* kernel/hd.c */
+PUBLIC void	task_hd();
+PUBLIC void	hd_handler(int irq);
+
+/* fs/main.c */
+PUBLIC void task_fs();
+
 /* tty */
 PUBLIC  void task_tty();
 PUBLIC  void in_process(TTY *p_tty, u32 key);
@@ -96,6 +104,8 @@ PUBLIC void out_char(CONSOLE *p_con, char ch);
 PUBLIC void init_screen(TTY *p_tty);
 PUBLIC  void select_console(int nr_console);
 PUBLIC  void scroll_screen(CONSOLE *p_con, int direction);
+
+
 
 // C库函数
 /* printf.c */

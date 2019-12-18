@@ -89,9 +89,11 @@ typedef struct s_proc {
 	char p_name[16];           /* name of the process， 进程名称 */
 
 	// 用于支持IPC新增的几个
-	int  p_flags;              /**=1，进程阻塞，=0进程运行
+	int  p_flags;              /**非零，进程阻塞，=0进程运行
 				    * process flags.
 				    * A proc is runnable if p_flags==0
+					* 非零的值代表其是因RECEIVING还是SENDING被阻塞
+					* 因为IPC是同步的所以收和发都要等到完成通信才能继续执行
 				    */
 
 	MESSAGE * p_msg;
@@ -124,7 +126,7 @@ typedef struct s_task {
 
 #define proc2pid(x) (x - proc_table)
 /* Number of tasks & procs , 分成Tasks和Processes*/
-#define NR_TASKS    2 // 进程数
+#define NR_TASKS    4 // 进程数
 #define NR_PROCS	3
 
 #define STACK_SIZE_TESTA    0x8000
@@ -132,12 +134,16 @@ typedef struct s_task {
 #define STACK_SIZE_TESTC	0x8000
 #define	STACK_SIZE_TTY			0x8000
 #define STACK_SIZE_SYS		0x8000
+#define STACK_SIZE_HD		0x8000	// 新增了两任务
+#define STACK_SIZE_FS		0x8000
 // 多个进程的栈的总大小
 #define STACK_SIZE_TOTAL	(STACK_SIZE_TESTA + \
 				STACK_SIZE_TESTB + \
 				STACK_SIZE_TESTC + \
 				STACK_SIZE_TTY + \
-				STACK_SIZE_SYS)
+				STACK_SIZE_SYS + \
+				STACK_SIZE_HD + \
+				STACK_SIZE_FS  	)
 
 
 

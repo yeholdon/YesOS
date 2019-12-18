@@ -1,25 +1,25 @@
-<Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53>
-<Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53>
-<Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53>
-<Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53>
-<Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53>
-<Ticks : 0xF000FE93><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53>
-<Ticks : 0xF0009C49><Ticks : 0xF000E2C7><Ticks : 0xF000A0A0><Ticks : 0xF000FF53>
-<Ticks : 0xF000FF53><Ticks : 0x0><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks : 0xF000FF53><Ticks
-: 0xF000FF53>
+RAM size:01FF0000h
+-----"cstart" begins-----
+-----"cstart" ends-----
+-----"kernel_main" begins-----
+NrDrives:1.
+Task FS begins.
+HD SN: BXHD00011
+HD Model: Generic 1234
+LBA supported: Yes
+LBA48 supported: Yes
+HD size: 83MB
+
+spinning in FS...
+<Ticks : 23><Ticks : EB><Ticks : 1BC><Ticks : 2A4><Ticks : 378><Ticks : 458><Tic
+ks : 539><Ticks : 61A><Ticks : 6FB><Ticks : 7DC><Ticks : 8BD><Ticks : 99E><Ticks
+ : A7F><Ticks : B60><Ticks : C41><Ticks : D22><Ticks : E03><Ticks : EE4><Ticks :
+ FC5><Ticks : 10A6><Ticks : 1187><Ticks : 1268><Ticks : 1349><Ticks : 142A><Tick
+s : 150B><Ticks : 15EC><Ticks : 16CD><Ticks : 17AE><Ticks : 188F><Ticks : 1970><
+Ticks : 1A51><Ticks : 1B32><Ticks : 1C13><Ticks : 1CF4><Ticks : 1DD5><Ticks : 1E
+B6><Ticks : 1F97><Ticks : 2078><Ticks : 2159><Ticks : 223A><Ticks : 231B><Ticks
+: 23FC><Ticks : 24DD><Ticks : 25BE><Ticks : 269F><Ticks : 2780><Ticks : 2861><Ti
+cks : 2942><Ticks : 2A23><Ticks : 2B04><Ticks : 2BE5><Ticks : 2CC6><Ticks : 2DA7
+><Ticks : 2E7D><Ticks : 2F57><Ticks : 302A><Ticks : 3107><Ticks : 31D9><Ticks :
+32B5><Ticks : 3387><Ticks : 3463><Ticks : 3535><Ticks : 3611><Ticks : 36E3><Tick
+s : 37BF><Ticks : 3891>

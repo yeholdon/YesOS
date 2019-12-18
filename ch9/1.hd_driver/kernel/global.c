@@ -30,7 +30,10 @@ PUBLIC	TASK	user_proc_table[NR_PROCS] = {
 					{TestB, STACK_SIZE_TESTB, "TestB"}, 
 					{TestC, STACK_SIZE_TESTC, "TestC"}};
 PUBLIC	TASK	task_table[NR_TASKS] = { {task_tty, STACK_SIZE_TTY, "tty"},
-																					  {task_sys, STACK_SIZE_SYS, "sys"}};
+																					  {task_sys, STACK_SIZE_SYS, "sys"},
+																					  {task_hd,  STACK_SIZE_HD,  "HD" },
+																					  {task_fs,  STACK_SIZE_FS,  "FS" }, 
+																					  };
 
 PUBLIC	irq_handler irq_table[NR_IRQ];		// 声明在global.h中。NR_IRQ=16，以对应主从两个8259A，定义在const.h中
 
