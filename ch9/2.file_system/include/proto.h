@@ -22,7 +22,7 @@ PUBLIC  void enable_irq(int irq);
 PUBLIC  void enable_int();
 PUBLIC  void disable_int();
 PUBLIC void	port_read(u16 port, void* buf, int n);
-
+PUBLIC void port_write(u16 port, void* buf, int n);
 // protect.c
 PUBLIC void	init_prot();
 PUBLIC void	init_8259A();

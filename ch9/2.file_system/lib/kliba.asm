@@ -22,6 +22,7 @@ global	enable_irq
 global	enable_int
 global	disable_int
 global	port_read
+global 	port_write
 ; ========================================================================
 ;                  void disp_str(char * info);
 ; ========================================================================
@@ -240,3 +241,16 @@ port_read:
 ;          若（DF）= 0，则DI加1（或加2）；否则DI减1（或减2）。
 ;     与INS指令相似，INSB 和INSW指令也分别从DX指出的外设端口输入一个字节或字到由ES: DI指定的存储器中，且根据方向标志位DF和串操作的类型来修改DI的值。
 ; 上述三种格式的指令均可加重复前缀REP，以实现连续的串操作。此时CX寄存器中的内容为重复操作的次数。
+
+
+; ========================================================================
+;                  void port_write(u16 port, void* buf, int n);
+; ========================================================================
+port_write:
+	mov	edx, [esp + 4]		; port
+	mov	esi, [esp + 4 + 4]	; buf
+	mov	ecx, [esp + 4 + 4 + 4]	; n
+	shr	ecx, 1
+	cld
+	rep	outsw
+	ret

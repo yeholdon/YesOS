@@ -26,14 +26,17 @@ PRIVATE void	get_part_table		(int drive, int sect_nr, struct part_ent * entry);
 PRIVATE void	partition		(int device, int style);
 PRIVATE void	print_hdinfo		(struct hd_info * hdi);
 PRIVATE void	hd_open			(int dev);
+PRIVATE void	hd_rdwt(MESSAGE *pMsg);
+PRIVATE void 	hd_ioctl(MESSAGE *pMsg);
+PRIVATE void hd_close(int device);
 
 PRIVATE	u8	hd_status;                                  // 硬盘状态别的函数也要用到，全局
 PRIVATE	u8	hdbuf[SECTOR_SIZE * 2];   // 两个扇区的缓冲区
 PRIVATE	struct hd_info	hd_info[1];			// 硬盘信息结构体，这里只有一个硬盘
 
 // 反过来从设备号得到
-// #define	DRV_OF_DEV(dev)	((dev) <= MAX_PRIM ? ((dev) / NR_PRIM_PER_DRIVE) :  ((dev) - MINOR_hd1a) / NR_SUB_PER_DRIVE)
-#define	DRV_OF_DEV(dev)	((dev) <= MAX_PRIM ? ((dev) / NR_PRIM_PER_DRIVE) :  ((dev) - MINOR_hd1a) >> 6)
+#define	DRV_OF_DEV(dev)	((dev) <= MAX_PRIM ? ((dev) / NR_PRIM_PER_DRIVE) :  ((dev) - MINOR_hd1a)  / (u32)NR_SUB_PER_DRIVE)
+
 
 /*****************************************************************************
  *                                task_hd
@@ -45,7 +48,7 @@ PRIVATE	struct hd_info	hd_info[1];			// 硬盘信息结构体，这里只有一�
 
 PUBLIC void task_hd() 
 {
-	// !!!!!!经过测试发现，代码里不能出现除以一个偶数的运算（2除外），否则就会出现invalid opcodeexception
+	// !!!!!!经过测试发现，代码里不能出现除以一个2的整数次幂的运算（2除外），否则就会出现invalid opcodeexception
 	// 怀疑的编译器BUG，先用>> 代替除法
     MESSAGE msg;
     init_hd();                                          // 先初始化，包括打开硬盘中断等
@@ -62,7 +65,16 @@ PUBLIC void task_hd()
             // hd_identify(msg.DEVICE); //获取硬盘参数
 			hd_open(msg.DEVICE);	// 现在需要根据文件系统任务传来的设备号来获取对应硬盘的参数
             break;
-        
+        case DEV_CLOSE:
+			hd_close(msg.DEVICE);
+			break;
+		case DEV_READ:
+		case DEV_WRITE:
+			hd_rdwt(&msg);
+			break;
+		case DEV_IOCTL:
+			hd_ioctl(&msg);
+			break;
         default:                            // 收到了消息但是消息类型未定义
 			dump_msg("HD driver::unknown msg", &msg);
 			spin("FS::main_loop (invalid msg.type)");        
@@ -128,6 +140,118 @@ PRIVATE void hd_open(int device)
 }
 
 /*****************************************************************************
+ *                                hd_close
+ *****************************************************************************/
+/**
+ * <Ring 1> This routine handles DEV_CLOSE message. 
+ * 
+ * @param device The device to be opened.
+ *****************************************************************************/
+PRIVATE void hd_close(int device) {
+	int drive = DRV_OF_DEV(device);
+	assert(drive == 0);
+	hd_info[drive].open_cnt--;
+}
+
+
+/*****************************************************************************
+ *                                hd_rdwt
+ *****************************************************************************/
+/**
+ * <Ring 1> This routine handles DEV_READ and DEV_WRITE message.
+ * 
+ * @param pMsg Message ptr.
+ *****************************************************************************/
+PRIVATE void hd_rdwt(MESSAGE *pMsg)
+{
+	int drive = DRV_OF_DEV(pMsg->DEVICE);
+	u64 pos = pMsg->POSITION;				// 以字节为单位的目标偏移
+	// 扇区号要在int范围内
+	assert((pos >> SECTOR_SIZE_SHIFT < (1 << 31)));
+	// 只允许从一个扇区的开头开始读取、写入
+	// 所以字节偏移的低9位必须全0
+	 assert((pos & 0x1FF) == 0);
+
+	u32 sec_nr = (u32) (pos >> SECTOR_SIZE_SHIFT);	// 扇区序号
+	int logidx = (pMsg->DEVICE - MINOR_hd1a) % NR_SUB_PER_DRIVE;	// 相对于第一个逻辑扇区次设备号的逻辑索引号
+	// 扇区号
+	sec_nr += pMsg->DEVICE < MAX_PRIM ? 
+		hd_info[drive].primary[pMsg->DEVICE].base :
+		hd_info[drive].logical[logidx].base;
+	
+	struct hd_cmd cmd;
+	cmd.count = (pMsg->CNT + SECTOR_SIZE) / SECTOR_SIZE;	// 最后一个扇区不足512字节的话最后一个也得读进来
+	cmd.features = 0;		// 这个暂时不知道有啥用
+	cmd.lba_low = sec_nr & 0xFF;
+	cmd.lba_mid = (sec_nr >> 8) & 0xFF;
+	cmd.lba_high = (sec_nr >> 16) & 0xFF;
+	cmd.device = MAKE_DEVICE_REG(1, drive, (sec_nr >> 24) & 0xF); // 主要用来确定操作模式和主从硬盘
+	cmd.command = (pMsg->type == DEV_READ) ? ATA_READ : ATA_WRITE;	// DEV_READ为msg type
+	hd_cmd_out(&cmd);
+
+	// 写完控制寄存器后开始读写操作
+	int bytes_left = pMsg->CNT;	
+	 void *la = (void *)va2la(pMsg->PROC_NR, pMsg->BUF);
+	 
+	 while (bytes_left > 0)
+	 {
+		 // 每次读的字节数，除了最后一个扇区，其他都是一个扇区的大小
+		 int bytes = min(SECTOR_SIZE, bytes_left);
+		 if(pMsg->type == DEV_READ) {
+			 	// 读操作
+				 interrupt_wait(); // 先等待接收到中断消息，同步通信，所以每收到就阻塞在这里
+				 port_read(REG_DATA, hdbuf, SECTOR_SIZE); // 每次读只能读一整个扇区，但是可以只取要的部分
+				 // 是memcpy的宏定义，说明代码里指针的地址指的是线性地址，从全局的缓冲区
+				 phys_copy(la, (void*)va2la(TASK_HD, hdbuf), bytes); 
+		 }
+		 else
+		 {
+			 // 如果HD_TIMEOUT的时间内状态寄存器的相应位都不符合要求，就报错
+			 if(!waitfor(STATUS_DRQ, STATUS_DRQ, HD_TIMEOUT)) {
+				 panic("hd writing error.");
+			 }
+			 port_write(REG_DATA, la, bytes);	// 向硬盘写数据的时候数据大小可以任意
+			 interrupt_wait();		// 写完也要等待操作完毕的中断
+		 }
+		 // ！如果前面bytes_laft已经小于一个扇区的大小，那这里就会<0导致下一次循环不终止
+		 bytes_left -= SECTOR_SIZE;
+		 la += SECTOR_SIZE;
+	 }
+	 
+}
+
+/*****************************************************************************
+ *                hd_ioctl: 只支持一种消息类型，用来返回请求分区的起始扇区和扇区数
+ *****************************************************************************/
+/**
+ * <Ring 1> This routine handles the DEV_IOCTL message.
+ * 
+ * @param pMsg  Ptr to the MESSAGE.
+ *****************************************************************************/
+PRIVATE void hd_ioctl(MESSAGE *pMsg) 
+{
+	int device = pMsg->DEVICE;
+	int drive = DRV_OF_DEV(device);
+
+	struct hd_info *hdi = &hd_info[drive];		// 取当前硬盘信息结构体的指针，方便处理
+
+	if (pMsg->REQUEST == DIOCTL_GET_DEV_INFO)
+	{
+		// 把请求分区的part_info copy到调用进程的缓冲区
+		void *dst = va2la(pMsg->PROC_NR, pMsg->BUF);
+		void *src = va2la(TASK_HD, device < MAX_PRIM ? 
+			&hdi->primary[device] : 
+			&hdi->logical[(device - MINOR_hd1a) % NR_SUB_PER_DRIVE]);
+		phys_copy(dst, src, sizeof(struct part_info));
+	}
+	else
+	{
+		assert(0);
+	}
+	
+}
+
+/*****************************************************************************
  *                                get_part_table
  *****************************************************************************/
 /**
@@ -190,7 +314,7 @@ PRIVATE void partition(int device, int style)
 			hdi->primary[dev_nr].size = part_tbl[i].nr_sects;
 
 			if (part_tbl[i].sys_id == EXT_PART) /* extended */
-				partition(device + dev_nr, P_EXTENDED);
+				partition(device + dev_nr, P_EXTENDED); // 嵌套读取逻辑分区表
 		}
 		assert(nr_prim_parts != 0);
 	}

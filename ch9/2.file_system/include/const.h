@@ -26,6 +26,10 @@ void	assertion_failure(char *exp, char *file, char *base_file, int line);
 
 #define	STR_DEFAULT_LEN	1024
 
+/* max() & min() */
+#define	max(a,b)	((a) > (b) ? (a) : (b))
+#define	min(a,b)	((a) < (b) ? (a) : (b))
+
 /* Boolean */
 #define	TRUE	1
 #define	FALSE	0
@@ -159,6 +163,10 @@ enum msgtype {
 	GET_TICKS,
 	/* for driver */
 	DEV_OPEN = 1001,
+	DEV_CLOSE,
+	DEV_READ,
+	DEV_WRITE,
+	DEV_IOCTL
 };
 
 /* macros for messages , IPC消息相关的宏定义*/
@@ -193,11 +201,13 @@ enum msgtype {
 #define	DEV_CHAR_TTY		4
 #define	DEV_SCSI		5
 /* make device number from major and minor numbers 
-个设备号都由主设备号和从设备号组成
+每个设备号都由主设备号和从设备号组成
 所以这两个宏用来组合主从设备号为总设备号
+因为从设备号的范围实际为0~63（一个硬盘最多64个逻辑分区）
+所以这里左移8位其实没有必要，左移6位即可
 */
 #define	MAJOR_SHIFT		8
-#define	MAKE_DEV(a,b)		((a << MAJOR_SHIFT) | b)		// a*64 + 
+#define	MAKE_DEV(a,b)		((a << MAJOR_SHIFT) | b)		// a*256 + 
 /* separate major and minor numbers from device number 
 后面用到的每个设备号都由主设备号和从设备号组成
 所以这两个宏用来分离
@@ -231,7 +241,8 @@ enum msgtype {
 
 
 /* device numbers of hard disk，次设备号即从0开始的，每个主分区16个号  */
-#define	MINOR_hd1a		0x10
+#define	MINOR_hd1a		0x10	// 第一个逻辑分区的次设备号，是由我们自己定义的，
+																// 只要大于9（9之前是两个硬盘的主分区次设备号）即可
 #define	MINOR_hd2a		(MINOR_hd1a+NR_SUB_PER_PART)
 // 指示主硬盘（OS所在硬盘）的总设备号
 #define	ROOT_DEV		MAKE_DEV(DEV_HD, MINOR_BOOT)
@@ -249,5 +260,6 @@ enum msgtype {
 #define	NR_INODE	64	/* FIXME */
 #define	NR_SUPER_BLOCK	8
 
+#define DIOCTL_GET_DEV_INFO	1 // 将请求设备的其实扇区和扇区数返回给调用者
 
 #endif
