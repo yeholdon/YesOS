@@ -64,3 +64,9 @@ struct dev_drv_map dev_to_dri_map[] = {
 	{TASK_TTY},		/**< 4 : TTY */
 	{INVALID_DRIVER}	/**< 5 : Reserved for scsi disk driver */
 };
+
+/**
+ * 6MB~7MB: buffer for FS
+ */
+PUBLIC	u8 *		fsbuf		= (u8*)0x600000;
+PUBLIC	const int	FSBUF_SIZE	= 0x100000;

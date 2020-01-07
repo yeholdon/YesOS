@@ -15,6 +15,11 @@ struct dev_drv_map {
 	int driver_nr; /**< The proc nr.\ of the device driver. */
 };
 
+/**
+ * @def   MAGIC_V1 标识我们的文件系统的一个数
+ * @brief Magic number of FS v1.0
+ */
+#define	MAGIC_V1	0x111
 
 /**
  * @struct super_block fs.h "include/fs.h"
@@ -76,4 +81,59 @@ struct inode {
 	int	i_cnt;		/**< How many procs share this inode  */
 	int	i_num;		/**< inode nr.  */
 };
+
+
+/**
+ * @def   INODE_SIZE
+ * @brief The size of i-node stored \b in \b the \b device.
+ * 一个inode在硬盘里占32位
+ * Note that this is the size of the struct in the device, \b NOT in memory.
+ * The size in memory is larger because of some more members.
+ */
+#define	INODE_SIZE	32
+
+
+/**
+ * @def   MAX_FILENAME_LEN
+ * @brief Max len of a filename
+ * @see   dir_entry
+ */
+#define	MAX_FILENAME_LEN	12
+
+/**
+ * @struct dir_entry
+ * @brief  Directory Entry
+ */
+struct dir_entry {
+	int	inode_nr;		/**< inode nr. 目录项的inode的序号*/
+	char	name[MAX_FILENAME_LEN];	/**< Filename */
+};
+
+/**
+ * @def   DIR_ENTRY_SIZE
+ * @brief The size of directory entry in the device.
+ *
+ * It is as same as the size in memory.
+ */
+#define	DIR_ENTRY_SIZE	sizeof(struct dir_entry)
+
+
+
+/**
+ * Since all invocations of `rw_sector()' in FS look similar (most of the
+ * params are the same), we use this macro to make code more readable.
+ */
+#define RD_SECT(dev,sect_nr) rw_sector(DEV_READ, \
+				       dev,				\
+				       (sect_nr) * SECTOR_SIZE,		\
+				       SECTOR_SIZE, /* read one sector */ \
+				       TASK_FS,				\
+				       fsbuf);
+#define WR_SECT(dev,sect_nr) rw_sector(DEV_WRITE, \
+				       dev,				\
+				       (sect_nr) * SECTOR_SIZE,		\
+				       SECTOR_SIZE, /* write one sector */ \
+				       TASK_FS,				\
+				       fsbuf);
+
 #endif

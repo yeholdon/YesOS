@@ -140,6 +140,7 @@ void	assertion_failure(char *exp, char *file, char *base_file, int line);
 #define TASK_TTY	0
 #define TASK_SYS	1
 #define TASK_HD		2
+#define TASK_FS		3
 /* process index */
 #define ANY		(NR_TASKS + NR_PROCS + 10)
 #define NO_TASK		(NR_TASKS + NR_PROCS + 20)
@@ -261,5 +262,16 @@ enum msgtype {
 #define	NR_SUPER_BLOCK	8
 
 #define DIOCTL_GET_DEV_INFO	1 // 将请求设备的其实扇区和扇区数返回给调用者
+
+// 文件系统结构元素相关
+/* INODE::i_mode (octal, lower 12 bits reserved) 标识不同的类型文件*/
+#define I_TYPE_MASK     0170000
+#define I_REGULAR       0100000
+#define I_BLOCK_SPECIAL 0060000
+#define I_DIRECTORY     0040000
+#define I_CHAR_SPECIAL  0020000
+#define I_NAMED_PIPE	0010000
+
+#define	NR_DEFAULT_FILE_SECTS	2048 /* 2048 * 512 = 1MB 默认的已经占用的扇区数为2048*/
 
 #endif
