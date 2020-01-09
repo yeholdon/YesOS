@@ -27,8 +27,8 @@ void	assertion_failure(char *exp, char *file, char *base_file, int line);
 #define	STR_DEFAULT_LEN	1024
 
 /* max() & min() */
-#define	max(a,b)	((a) > (b) ? (a) : (b))
-#define	min(a,b)	((a) < (b) ? (a) : (b))
+#define	MAX(a,b)	((a) > (b) ? (a) : (b))
+#define	MIN(a,b)	((a) < (b) ? (a) : (b))
 
 /* Boolean */
 #define	TRUE	1

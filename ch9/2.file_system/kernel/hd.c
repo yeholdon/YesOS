@@ -71,6 +71,7 @@ PUBLIC void task_hd()
 		case DEV_READ:
 		case DEV_WRITE:
 			hd_rdwt(&msg);
+			// assert(0);
 			break;
 		case DEV_IOCTL:
 			hd_ioctl(&msg);
@@ -180,7 +181,8 @@ PRIVATE void hd_rdwt(MESSAGE *pMsg)
 		hd_info[drive].logical[logidx].base;
 	
 	struct hd_cmd cmd;
-	cmd.count = (pMsg->CNT + SECTOR_SIZE) / SECTOR_SIZE;	// 最后一个扇区不足512字节的话最后一个也得读进来
+	cmd.count = (pMsg->CNT + SECTOR_SIZE - 1) / (u32)SECTOR_SIZE;	// 最后一个扇区不足512字节的话最后一个也得读进来
+	
 	cmd.features = 0;		// 这个暂时不知道有啥用
 	cmd.lba_low = sec_nr & 0xFF;
 	cmd.lba_mid = (sec_nr >> 8) & 0xFF;
@@ -188,7 +190,7 @@ PRIVATE void hd_rdwt(MESSAGE *pMsg)
 	cmd.device = MAKE_DEVICE_REG(1, drive, (sec_nr >> 24) & 0xF); // 主要用来确定操作模式和主从硬盘
 	cmd.command = (pMsg->type == DEV_READ) ? ATA_READ : ATA_WRITE;	// DEV_READ为msg type
 	hd_cmd_out(&cmd);
-
+	
 	// 写完控制寄存器后开始读写操作
 	int bytes_left = pMsg->CNT;	
 	 void *la = (void *)va2la(pMsg->PROC_NR, pMsg->BUF);
@@ -196,7 +198,8 @@ PRIVATE void hd_rdwt(MESSAGE *pMsg)
 	 while (bytes_left > 0)
 	 {
 		 // 每次读的字节数，除了最后一个扇区，其他都是一个扇区的大小
-		 int bytes = min(SECTOR_SIZE, bytes_left);
+		int bytes = min(SECTOR_SIZE, bytes_left);
+		//  int bytes = (SECTOR_SIZE < bytes_left ? 1 : 2);
 		 if(pMsg->type == DEV_READ) {
 			 	// 读操作
 				 interrupt_wait(); // 先等待接收到中断消息，同步通信，所以每收到就阻塞在这里
@@ -431,6 +434,7 @@ PRIVATE void hd_cmd_out(struct hd_cmd* cmd)
 	 * waitfor等待HD_TIMEOUT的时间并在等待过程中循环读取硬盘状态
 	 * 如果这段时间里硬盘都是忙BSY =0，则报错。目的就是等待硬盘的特定状态
 	 */
+	
 	if (!waitfor(STATUS_BSY, 0, HD_TIMEOUT))
 		panic("hd error.");
 	// 确定硬盘不忙后，再开始写命令，提自己的想需求

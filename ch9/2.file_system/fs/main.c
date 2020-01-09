@@ -66,6 +66,8 @@ PRIVATE void init_fs()
 	assert(dev_to_dri_map[MAJOR(ROOT_DEV)].driver_nr != INVALID_DRIVER);
     // 发请求读硬盘数据消息，并等待直到收到可读数据的消息
 	send_recv(BOTH, dev_to_dri_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
+
+	mkfs();
 }
 
 /*****************************************************************************
@@ -97,7 +99,7 @@ PRIVATE void mkfs()
 	send_recv(BOTH, dev_to_dri_map[MAJOR(ROOT_DEV)].driver_nr, &driver_msg);
 	// 读取的信息存在geo里
 	printl("dev size: 0x%x sectors\n", geo.size);
-
+	
 	// 准备super block结构信息，并写入 硬盘分区的第一个扇区
 	u32 bits_per_sector = SECTOR_SIZE * 8;
 	struct super_block sb;
@@ -122,9 +124,10 @@ PRIVATE void mkfs()
 	// 先把超级块内容拷贝进fsbuf
 	memset(fsbuf, 0x90, SECTOR_SIZE);	// super block占一个扇区
 	memcpy(fsbuf, &sb, SUPER_BLOCK_SIZE);
+	
 	// 正式通过IPC将super block写入硬盘
 	WR_SECT(ROOT_DEV, 1);
-
+	
 	// 打印文件系统几个结构要素的起始地址
 	printl("devbase:0x%x00, sb:0x%x00, imap:0x%x00, smap:0x%x00\n"
 		"        inodes:0x%x00, 1st_sector:0x%x00\n", 
@@ -162,7 +165,7 @@ PRIVATE void mkfs()
 	 *                                `-------- for `/'
 	 */
 	int i;
-	for (i = 0; i < nr_sects / 8; i++)
+	for (i = 0; i < nr_sects >> 3; i++)
 		fsbuf[i] = 0xFF;
 
 	for (int j = 0; j < nr_sects % 8; j++)
@@ -198,6 +201,26 @@ PRIVATE void mkfs()
 		pi->i_nr_sects = 0;
 	}
 	WR_SECT(ROOT_DEV, 1 + sb.nr_imap_sects + sb.nr_smap_sects + 1);
+
+	// 文件本身
+	// 首先是特殊的文件——根目录文件
+	// dir_entry结构是存在于根目录文件中的，用来索引一个文件，有几个文件根目录文件里就有几个dir_entry项
+	/*          `/'        首先是根目录文件 */
+	// 根目录文件的第一个dir_entry
+	memset(fsbuf, 0, SECTOR_SIZE);
+	struct dir_entry *pde = (struct dir_entry *)fsbuf;
+
+	pde->inode_nr = 1;		// 根目录的inode序号为1
+	strcpy(pde->name, ".");
+
+	/* dir entries of `/dev_tty0~2' */
+	for (i = 0; i < NR_CONSOLES; i++) {
+		pde++;
+		pde->inode_nr = i + 2; /* dev_tty0's inode_nr is 2 */
+		sprintf(pde->name, "dev_tty%d", i);	// 可见文件名是不带/号的
+	}
+	WR_SECT(ROOT_DEV, sb.n_1st_sect);	
+
 }
 
 
@@ -220,7 +243,7 @@ PRIVATE void mkfs()
 PUBLIC int rw_sector(int io_type, int dev, u64 pos, int bytes, int proc_nr, void* buf)
 {
 	MESSAGE driver_msg;
-
+	
 	driver_msg.type		= io_type;
 	driver_msg.DEVICE	= MINOR(dev);
 	driver_msg.POSITION	= pos;
@@ -228,6 +251,7 @@ PUBLIC int rw_sector(int io_type, int dev, u64 pos, int bytes, int proc_nr, void
 	driver_msg.CNT		= bytes;
 	driver_msg.PROC_NR	= proc_nr;
 	assert(dev_to_dri_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
+	
 	send_recv(BOTH, dev_to_dri_map[MAJOR(dev)].driver_nr, &driver_msg);
 
 	return 0;

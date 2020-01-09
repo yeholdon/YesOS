@@ -31,6 +31,8 @@ PUBLIC u32	seg2phys(u16 seg);
 // klib.c 
 PUBLIC void	delay(int time);
 PUBLIC char * itoa(char *str, int num);
+PUBLIC int max(int a, int b);
+PUBLIC int min(int a, int b);
 
 // kernel.asm 
 void restart();
@@ -94,6 +96,8 @@ PUBLIC void	hd_handler(int irq);
 
 /* fs/main.c */
 PUBLIC void task_fs();
+PUBLIC int			rw_sector(int io_type, int dev, u64 pos,
+					  int bytes, int proc_nr, void * buf);
 
 /* tty */
 PUBLIC  void task_tty();
