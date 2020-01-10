@@ -195,6 +195,19 @@ LABEL_GO_ON_LOADING_FILE:
 
 	;计算下一个扇区放置在内存中的位置——bx的设置
 	add bx, [BPB_BytsPerSec]
+	; 这里增加对bx是否进位的判断
+	; bx进位代表内核已满64K所以要将es增加0x1000,移到下一个64k
+	jc	LABEL_EXTEND_KERNEL_SPACE
+	jmp	LABEL_GO_ON
+
+LABEL_EXTEND_KERNEL_SPACE:
+	push	ax			; es += 0x1000  ← es 指向下一个段
+	mov	ax, es
+	add	ax, 1000h
+	mov	es, ax
+	pop	ax
+
+LABEL_GO_ON:
 	jmp LABEL_GO_ON_LOADING_FILE	;继续读下一个扇区
 
 LABEL_FILE_LOADED:
