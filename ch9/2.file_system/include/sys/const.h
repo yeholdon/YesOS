@@ -127,6 +127,8 @@
 #define ANY		(NR_TASKS + NR_PROCS + 10)
 #define NO_TASK		(NR_TASKS + NR_PROCS + 20)
 
+#define	MAX_TICKS	0x7FFFABCD
+
 /* magic chars used by `printx' */
 #define MAG_CH_PANIC	'\002'
 #define MAG_CH_ASSERT	'\003'
@@ -146,6 +148,9 @@ enum msgtype {
 	GET_TICKS, GET_PID,
 	/* FS */
 	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,
+
+	/* FS & TTY */
+	SUSPEND_PROC, RESUME_PROC,
 
 	/* TTY, SYS, FS, MM, etc */
 	SYSCALL_RET,

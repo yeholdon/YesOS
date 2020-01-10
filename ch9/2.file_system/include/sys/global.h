@@ -35,6 +35,12 @@ EXTERN  TSS tss;
 
 EXTERN	int		nr_current_console;
 
+EXTERN	int	key_pressed; /**
+			      * used for clock_handler
+			      * to wake up TASK_TTY when
+			      * a key is pressed
+			      */
+
 // 定义global.c里, 这里声明过后才能在别的地方引用
 extern  PROCESS proc_table[];
 extern  char    task_stack[];

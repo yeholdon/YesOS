@@ -199,15 +199,33 @@ void TestA()
  *======================================================================*/
 void TestB()
 {
-	int i = 0x1000;
-	while(1){
-		// disp_color_str("B.", BRIGHT | MAKE_COLOR(BLACK, RED));
-		// disp_int(get_ticks());
-		printf("B");
-		// panic("in TTY");
-		// assert(0);
-		milli_delay(2000);
+	char tty_name[] = "/dev_tty1";
+
+	int fd_stdin  = open(tty_name, O_RDWR);
+	assert(fd_stdin  == 0);
+	int fd_stdout = open(tty_name, O_RDWR);
+	assert(fd_stdout == 1);
+
+	char rdbuf[128];
+
+	while (1) {
+		write(fd_stdout, "$ ", 2);
+		int r = read(fd_stdin, rdbuf, 70);
+		rdbuf[r] = 0;
+
+		if (strcmp(rdbuf, "hello") == 0) {
+			write(fd_stdout, "hello world!\n", 13);
+		}
+		else {
+			if (rdbuf[0]) {
+				write(fd_stdout, "{", 1);
+				write(fd_stdout, rdbuf, r);
+				write(fd_stdout, "}\n", 2);
+			}
+		}
 	}
+
+	assert(0); /* never arrive here */
 }
 
 /*======================================================================*

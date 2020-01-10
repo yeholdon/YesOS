@@ -17,11 +17,13 @@
 #include "proto.h"
 #include "stdio.h"
 
+PRIVATE void clear_screen(int pos, int len);
 PRIVATE void set_cursor(unsigned int position);
 PRIVATE void set_video_start_addr(u32 addr);
 PRIVATE void auto_scroll_screen(CONSOLE *p_con);
 PRIVATE void flush(CONSOLE* p_con);
 PUBLIC int  is_current_console(CONSOLE *p_con);
+PRIVATE	void w_copy(unsigned int dst, const unsigned int src, int size);
 /*======================================================================*
                          select_console:根据参数指定的console切换控制台
  *======================================================================*/
@@ -61,6 +63,13 @@ PUBLIC void out_char(CONSOLE *p_con, char ch)
     // 自动滚屏到输入光标位置
     auto_scroll_screen(p_con);
 
+	/*
+	 * calculate the coordinate of cursor in current console (not in
+	 * current screen)
+	 */
+	int cursor_x = (p_con->cursor - p_con->original_addr) % SCREEN_WIDTH;
+	int cursor_y = (p_con->cursor - p_con->original_addr) / SCREEN_WIDTH;
+
     switch (ch)
     {
     case '\n' :
@@ -88,6 +97,21 @@ PUBLIC void out_char(CONSOLE *p_con, char ch)
         }
         break;
     }
+
+    // if (p_con->cursor - p_con->original_addr >= p_con->v_mem_limit) {
+	// 	cursor_x = (p_con->cursor - p_con->original_addr) % SCREEN_WIDTH;
+	// 	cursor_y = (p_con->cursor - p_con->original_addr) / SCREEN_WIDTH;
+	// 	int cp_orig = p_con->original_addr + (cursor_y + 1) * SCREEN_WIDTH - SCREEN_SIZE;
+	// 	w_copy(p_con->original_addr, cp_orig, SCREEN_SIZE - SCREEN_WIDTH);
+	// 	p_con->current_start_addr = p_con->original_addr;
+	// 	p_con->cursor = p_con->original_addr + (SCREEN_SIZE - SCREEN_WIDTH) + cursor_x;
+	// 	clear_screen(p_con->cursor, SCREEN_WIDTH);
+	// 	if (!p_con->is_full)
+	// 		p_con->is_full = 1;
+	// }
+
+    assert(p_con->cursor - p_con->original_addr < p_con->v_mem_limit);
+
     auto_scroll_screen(p_con);
     flush(p_con);
 }
@@ -109,7 +133,7 @@ PRIVATE void flush(CONSOLE* p_con)
  *======================================================================*/
 PRIVATE void auto_scroll_screen(CONSOLE *p_con)
 {
-    if(p_con->current_start_addr + SCREEN_SIZE <= p_con->cursor) {
+    if(p_con->current_start_addr + SCREEN_SIZE < p_con->cursor) {
         int rows = (p_con->cursor - (p_con->current_start_addr + SCREEN_SIZE )) / SCREEN_WIDTH + 1; 
         for (int i = 0; i < rows; i++)
         {
@@ -142,6 +166,23 @@ PRIVATE void set_cursor(unsigned int position)
 	enable_int();
 }
 
+/*****************************************************************************
+ *                                clear_screen:从pos位置开始清除len个字符
+ *****************************************************************************/
+/**
+ * Write whitespaces to the screen.
+ * 
+ * @param pos  Write from here.
+ * @param len  How many whitespaces will be written.
+ *****************************************************************************/
+PRIVATE void clear_screen(int pos, int len)
+{
+	u8 * pch = (u8*)(V_MEM_BASE + pos * 2);
+	while (--len >= 0) {
+		*pch++ = ' ';
+		*pch++ = DEFAULT_CHAR_COLOR;
+	}
+}
 
 /*======================================================================*
                           is_current_console:判断当前console是否为当前轮询到的tty对应的console
@@ -221,4 +262,24 @@ PUBLIC  void    scroll_screen(CONSOLE *p_con, int direction)
     // set_video_start_addr(p_con->current_start_addr);
     // set_cursor(p_con->cursor);                                                  // 不要忘了光标
     flush(p_con);
+}
+
+/*****************************************************************************
+ *                                w_copy:以字为单位 在内存中拷贝
+ *****************************************************************************/
+/**
+ * Copy data in WORDS.
+ *
+ * Note that the addresses of dst and src are not pointers, but integers, 'coz
+ * in most cases we pass integers into it as parameters.
+ * 
+ * @param dst   Addr of destination.
+ * @param src   Addr of source.
+ * @param size  How many words will be copied.
+ *****************************************************************************/
+PRIVATE	void w_copy(unsigned int dst, const unsigned int src, int size)
+{
+	phys_copy((void*)(V_MEM_BASE + (dst << 1)),
+		  (void*)(V_MEM_BASE + (src << 1)),
+		  size << 1);
 }

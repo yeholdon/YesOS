@@ -14,13 +14,16 @@
 #include "tty.h"
 #include "console.h"
 #include "stdio.h"
+#include "string.h"
 
 #define TTY_FIRST   (tty_table)
 #define TTY_END     (tty_table + NR_CONSOLES)
 
 PRIVATE void init_tty(TTY    *p_tty) ;
-PRIVATE void tty_do_read(TTY *p_tty) ;
-PRIVATE void tty_do_write(TTY* p_tty);
+PRIVATE void	tty_dev_read	(TTY* tty);
+PRIVATE void	tty_dev_write	(TTY* tty);
+PRIVATE void	tty_do_read	(TTY* tty, MESSAGE* msg);
+PRIVATE void	tty_do_write(TTY* tty, MESSAGE* msg);
 PRIVATE void put_key(TTY *p_tty, u32 key) ;
 /*======================================================================*
                            task_tty:tty任务
@@ -29,6 +32,9 @@ PUBLIC void task_tty()
 {
     // 下面开始扩充task_tty
     TTY *p_tty;
+    // 新增IPC操作，将TTY纳入文件系统
+    MESSAGE msg;
+
     init_keyboard();                // 因为键盘也应该被看做TTY的一部分，所以初始化也被放到了这里
 
     // 初始化所有tty
@@ -40,15 +46,54 @@ PUBLIC void task_tty()
     // nr_current_console = 0; //默认当前console为0号
     select_console(0);
     // 轮询每个tty
+    // while (1) {
+	// 	for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++) {
+	// 		do {
+	// 			tty_dev_read(p_tty);
+	// 			tty_dev_write(p_tty);
+	// 		} while (p_tty->inbuf_count);
+	// 	}
+    //     assert(0);
+	// 	send_recv(RECEIVE, ANY, &msg);
+
+	// 	int src = msg.source;
+	// 	assert(src != TASK_TTY);
+
+	// 	TTY* ptty = &tty_table[msg.DEVICE];
+
+	// 	switch (msg.type) {
+	// 	case DEV_OPEN:
+	// 		reset_msg(&msg);
+	// 		msg.type = SYSCALL_RET;
+	// 		send_recv(SEND, src, &msg);
+	// 		break;
+	// 	case DEV_READ:
+	// 		tty_do_read(ptty, &msg);
+	// 		break;
+	// 	case DEV_WRITE:
+	// 		tty_do_write(ptty, &msg);
+	// 		break;
+	// 	case HARD_INT:
+	// 		/**
+	// 		 * waked up by clock_handler -- a key was just pressed
+	// 		 * @see clock_handler() inform_int()
+	// 		 */
+	// 		key_pressed = 0;
+	// 		continue;
+	// 	default:
+	// 		dump_msg("TTY::unknown msg", &msg);
+	// 		break;
+	// 	}
+	// }
+
     while (1)
     {
         for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++) {
-            tty_do_read(p_tty);
-            tty_do_write(p_tty);
+            tty_dev_read(p_tty);
+            tty_dev_write(p_tty);
         }
     }
     
-
 }
 
 /*======================================================================*
@@ -63,10 +108,16 @@ PRIVATE void init_tty(TTY    *p_tty)
 }
 
 
+
+// 原来tty_do_read/write()的功能用新的tty_dev_read/write()来完成
+// 由于新的tty要与文件系统关联，所以需要进行IPC。新的tty_do_read/write
+// 通过IPC和FS消息通信进行读写的协调，但是不直接进程读写
+
+// tty_dev_read/write 负责从键盘缓冲区读入 字符，并写入进程P的缓冲区（同时回显到控制台）
 /*======================================================================*
-                          tty_do_read:从键盘读输入到tty缓冲区
+                          tty_dev_read:从键盘读输入到tty缓冲区
  *======================================================================*/
-PRIVATE void tty_do_read(TTY *p_tty) 
+PRIVATE void tty_dev_read(TTY *p_tty) 
 {
     if (is_current_console(p_tty->p_console))
     {
@@ -79,9 +130,9 @@ PRIVATE void tty_do_read(TTY *p_tty)
 }
 
 /*======================================================================*
-                          tty_do_write:从tty缓冲区取出键值，用out_char()显示在对应console中
+                          tty_dev_write:从tty缓冲区取出键值，用out_char()显示在对应console中
  *======================================================================*/
-PRIVATE void tty_do_write(TTY *p_tty) 
+PRIVATE void tty_dev_write(TTY *p_tty) 
 {
     if (p_tty->inbuf_count != 0)
     {
@@ -92,13 +143,110 @@ PRIVATE void tty_do_write(TTY *p_tty)
         }
         p_tty->inbuf_count--;
 
+        // 进程P通过TTY读入tty_left_cnt的字符
+        if (p_tty->tty_left_cnt)
+        {
+            if (ch >= ' ' && ch <= '~') // 可打印字符，直接输出
+            {
+                out_char(p_tty->p_console, ch); // 发给进程P的同时也回显
+                void *p = p_tty->tty_req_buf + p_tty->tty_trans_cnt;
+                // 把把读入的字符复制进进程P的缓冲区
+                phys_copy(p, (void *)va2la(TASK_TTY, &ch), 1); 
+                p_tty->tty_trans_cnt++;
+                p_tty->tty_left_cnt--;
+            }
+            else if (ch == '\b' && p_tty->tty_trans_cnt > 0)
+            {
+                // 删除（退格），要保证有东西可删
+                out_char(p_tty->p_console, ch);
+                p_tty->tty_trans_cnt--;
+                p_tty->tty_left_cnt++;
+            }
+            
+            if (ch == '\n' || p_tty->tty_left_cnt == 0)
+            {
+                out_char(p_tty->p_console, ch);
+                // 进程P当次从TTY读入完成，tty发消息解除进程P的挂起
+                MESSAGE msg;
+                msg.type = RESUME_PROC;
+                msg.PROC_NR = p_tty->tty_procnr;
+                msg.CNT = p_tty->tty_trans_cnt;
+                send_recv(SEND, p_tty->tty_caller, &msg);
+                p_tty->tty_left_cnt = 0;
+            }
+            
+        }
+        
         // 输出到console
-        out_char(p_tty->p_console, ch);
+        // out_char(p_tty->p_console, ch);
     }
     
 }
 
+// tty_do_read/write负责接收通过FS转发而来的进程P的读TTY请求，
+/*****************************************************************************
+ *                                tty_do_read：
+ *  task_tty接收通过FS转发而来的进程P的读TTY请求DEV_READ，
+ *  调用tty_do_read,该函数中，TTY记下发出请求是进程号等信息后立即返回，并回SUSPEND_PROC
+ *  消息给进程P(通过FS)，使P保持阻塞，直到收到RESUME_PROC消息。
+ *****************************************************************************/
+/**
+ * Invoked when task TTY receives DEV_READ message.
+ *
+ * @note The routine will return immediately after setting some members of
+ * TTY struct, telling FS to suspend the proc who wants to read. The real
+ * transfer (tty buffer -> proc buffer) is not done here.
+ * 
+ * @param tty  From which TTY the caller proc wants to read.
+ * @param msg  The MESSAGE just received.
+ *****************************************************************************/
+PRIVATE void tty_do_read(TTY* tty, MESSAGE* msg)
+{
+	/* tell the tty: */
+	tty->tty_caller   = msg->source;  /* who called, usually FS */
+	tty->tty_procnr   = msg->PROC_NR; /* who wants the chars */
+	tty->tty_req_buf  = va2la(tty->tty_procnr,
+				  msg->BUF);/* where the chars should be put */
+	tty->tty_left_cnt = msg->CNT; /* how many chars are requested */
+	tty->tty_trans_cnt= 0; /* how many chars have been transferred */
 
+	msg->type = SUSPEND_PROC;
+	msg->CNT = tty->tty_left_cnt;
+	send_recv(SEND, tty->tty_caller, msg);
+}
+
+
+/*****************************************************************************
+ *                                tty_do_write:
+ * task_tty接收通过FS转发而来的进程P的写TTY请求DEV_WRITE，
+ * 调用tty_do_read,该函数中，TTY把P要写入TTY的内容拷贝到TTY的缓冲区中
+ * 同时回显到控制台，最后给P回一个SYSCALL_RET的消息表示写TTY完成
+ *****************************************************************************/
+/**
+ * Invoked when task TTY receives DEV_WRITE message.
+ * 
+ * @param tty  To which TTY the calller proc is bound.
+ * @param msg  The MESSAGE.
+ *****************************************************************************/
+PRIVATE void tty_do_write(TTY* tty, MESSAGE* msg)
+{
+	char buf[TTY_OUT_BUF_LEN];
+	char * p = (char*)va2la(msg->PROC_NR, msg->BUF);
+	int i = msg->CNT;
+	int j;
+
+	while (i) {
+		int bytes = min(TTY_OUT_BUF_LEN, i);
+		phys_copy(va2la(TASK_TTY, buf), (void*)p, bytes);
+		for (j = 0; j < bytes; j++)
+			out_char(tty->p_console, buf[j]);
+		i -= bytes;
+		p += bytes;
+	}
+
+	msg->type = SYSCALL_RET;
+	send_recv(SEND, msg->source, msg);
+}
 
 
 
@@ -225,8 +373,6 @@ PUBLIC int sys_write(int _unused1, char* buf, int len, PROCESS* p_proc)       //
     tty_write(&tty_table[p_proc->nr_tty], buf, len);
     return 0;
 }
-
-
 
 
 

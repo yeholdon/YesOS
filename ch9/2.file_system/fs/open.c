@@ -126,9 +126,7 @@ PUBLIC int do_open()
             driver_msg.DEVICE - MINOR(dev);
             assert(MAJOR(dev) == 4);
             assert(dev_to_dri_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
-            assert(0);
             send_recv(BOTH, dev_to_dri_map[MAJOR(dev)].driver_nr, &driver_msg);
-            assert(0);
         }
         else if (imode == I_DIRECTORY)
         {

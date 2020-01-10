@@ -11,7 +11,7 @@
 #include "string.h"
 #include "proc.h"
 #include "global.h"
-
+#include "stdio.h"
 
 /*======================================================================*
                            clock_handler
@@ -20,19 +20,36 @@ PUBLIC void clock_handler(int irq)
 {
 	// disp_str("#");
 
-    ticks++;            // 这个是新加的
-    p_proc_ready->ticks--;
+    // ticks++;            // 这个是新加的
+    // p_proc_ready->ticks--;
 
-    if (k_reenter != 0) 
-    {
-        return;
-    }
+    // if (k_reenter != 0) 
+    // {
+    //     return;
+    // }
 
-    // 新的策略，一个进程运行完它的优先级对应的时间后再换下一个
-    if (p_proc_ready->ticks > 0) 
-    {
-        return;
-    }
+    // // 新的策略，一个进程运行完它的优先级对应的时间后再换下一个
+    // if (p_proc_ready->ticks > 0) 
+    // {
+    //     return;
+    // }
+
+	if (++ticks >= MAX_TICKS)
+		ticks = 0;
+
+	if (p_proc_ready->ticks)
+		p_proc_ready->ticks--;
+
+	if (key_pressed)
+		inform_int(TASK_TTY);
+
+	if (k_reenter != 0) {
+		return;
+	}
+
+	if (p_proc_ready->ticks > 0) {
+		return;
+	}
 
     schedule();
     

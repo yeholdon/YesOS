@@ -69,9 +69,9 @@ PUBLIC void task_fs()
 		 case UNLINK: 
 		 	fs_msg.RETVAL = do_unlink(); 
 		 	break; 
-		/* case RESUME_PROC: */
-		/* 	src = fs_msg.PROC_NR; */
-		/* 	break; */
+		 case RESUME_PROC: 
+		 	src = fs_msg.PROC_NR; 
+		 	break; 
 		/* case FORK: */
 		/* 	fs_msg.RETVAL = fs_fork(); */
 		/* 	break; */
@@ -88,8 +88,10 @@ PUBLIC void task_fs()
 		}
 
 		/* reply */
-		fs_msg.type = SYSCALL_RET;
-		send_recv(SEND, src, &fs_msg);
+		if (fs_msg.type != SUSPEND_PROC) {
+			fs_msg.type = SYSCALL_RET;	// 收到RESUME_PROC，通知P可以继续运行也就是读取它要的内容了
+			send_recv(SEND, src, &fs_msg);
+		}
 	}
 	spin("FS");
 }

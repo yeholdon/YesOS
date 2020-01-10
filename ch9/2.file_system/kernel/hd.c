@@ -306,7 +306,7 @@ PRIVATE void partition(int device, int style)
 	struct part_ent part_tbl[NR_SUB_PER_DRIVE];
 
 	if (style == P_PRIMARY) {
-		get_part_table(drive, drive, part_tbl);
+		get_part_table(drive, drive, part_tbl);  
 
 		int nr_prim_parts = 0;
 		for (i = 0; i < NR_PART_PER_DRIVE; i++) { /* 0~3 */
