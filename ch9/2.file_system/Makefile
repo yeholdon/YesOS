@@ -29,8 +29,8 @@ OBJS		= kernel/kernel.o kernel/syscall.o  kernel/keyboard.o kernel/start.o kerne
 						kernel/proc.o kernel/global.o kernel/protect.o  kernel/main.o kernel/clock.o \
 						kernel/tty.o kernel/console.o kernel/systask.o \
 						kernel/printf.o kernel/vsprintf.o kernel/hd.o \
-						lib/klib.o lib/kliba.o lib/string.o lib/misc.o lib/open.o lib/close.o lib/read.o lib/write.o \
-						fs/main.o fs/open.o fs/misc.o fs/read_write.o
+						lib/klib.o lib/kliba.o lib/string.o lib/misc.o lib/open.o lib/close.o lib/read.o lib/write.o lib/syslog.o lib/getpid.o lib/unlink.o\
+						fs/main.o fs/open.o fs/misc.o fs/read_write.o fs/disklog.o fs/link.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -117,6 +117,12 @@ lib/read.o : lib/read.c
 lib/write.o : lib/write.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+lib/syslog.o : lib/syslog.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/getpid.o : lib/getpid.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 lib/kliba.o : lib/kliba.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
@@ -163,4 +169,7 @@ fs/misc.o:fs/misc.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 fs/read_write.o:fs/read_write.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+fs/disklog.o:fs/disklog.c
 	$(CC) $(CFLAGS) -o $@ $<

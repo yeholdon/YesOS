@@ -138,8 +138,8 @@ PUBLIC  int kernel_main()
 void TestA()
 {
 	int fd;
-	int n;
-	const char filename[] = "blah";
+	int i, n;
+	const char filename[MAX_FILENAME_LEN+1] = "blah";
 	const char bufw[] = "abcde";
 	const int rd_bytes = 3;
 	char bufr[rd_bytes];
@@ -149,7 +149,7 @@ void TestA()
 	/* create */
 	fd = open(filename, O_CREAT | O_RDWR);
 	assert(fd != -1);
-	printf("File created. fd: %d\n", fd);
+	printf("File created: %s (fd %d)\n", filename, fd);
 
 	/* write */
 	n = write(fd, bufw, strlen(bufw));
@@ -172,6 +172,25 @@ void TestA()
 	/* close */
 	close(fd);
 
+	char * filenames[] = {"/foo", "/bar", "/baz"};
+
+	/* create files */
+	for (i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
+		fd = open(filenames[i], O_CREAT | O_RDWR);
+		assert(fd != -1);
+		printf("File created: %s (fd %d)\n", filenames[i], fd);
+		close(fd);
+	}
+
+	char * rfilenames[] = {"/bar", "/foo", "/baz", "/dev_tty0"};
+
+	/* remove files */
+	for (i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
+		if (unlink(rfilenames[i]) == 0)
+			printf("File removed: %s\n", rfilenames[i]);
+		else
+			printf("Failed to remove file: %s\n", rfilenames[i]);
+	}
 	spin("TestA");
 }
 

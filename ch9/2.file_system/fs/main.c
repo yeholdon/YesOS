@@ -66,9 +66,9 @@ PUBLIC void task_fs()
 		/* case LSEEK: */
 		/* 	fs_msg.OFFSET = do_lseek(); */
 		/* 	break; */
-		/* case UNLINK: */
-		/* 	fs_msg.RETVAL = do_unlink(); */
-		/* 	break; */
+		 case UNLINK: 
+		 	fs_msg.RETVAL = do_unlink(); 
+		 	break; 
 		/* case RESUME_PROC: */
 		/* 	src = fs_msg.PROC_NR; */
 		/* 	break; */

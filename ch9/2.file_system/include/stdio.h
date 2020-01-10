@@ -5,7 +5,7 @@
  */
 #ifndef _YE_STDIO_H_
 #define _YE_STDIO_H_
-
+#include "config.h"
 /* the assert macro */
 #define ASSERT			//要assert起作用的时候加上
 #ifdef	ASSERT
@@ -38,6 +38,9 @@ void	assertion_failure(char *exp, char *file, char *base_file, int line);
 /*--------*/
 /* 库函数 */
 /*--------*/
+#ifdef ENABLE_DISK_LOG
+#define SYSLOG syslog
+#endif
 
 /* lib/open.c */
 PUBLIC	int	open(const char *pathname, int flags);
@@ -50,5 +53,15 @@ PUBLIC int	read		(int fd, void *buf, int count);
 
 /* lib/write.c */
 PUBLIC int	write		(int fd, const void *buf, int count);
+
+/* lib/getpid.c */
+PUBLIC int	getpid		();
+
+/* lib/unlink.c */
+PUBLIC	int	unlink		(const char *pathname);
+
+/* lib/syslog.c */
+PUBLIC	int	syslog		(const char *fmt, ...);
+
 
 #endif

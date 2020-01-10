@@ -143,7 +143,7 @@ enum msgtype {
 	HARD_INT = 1,
 
 	/* SYS task */
-	GET_TICKS,
+	GET_TICKS, GET_PID,
 	/* FS */
 	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,
 
@@ -154,7 +154,10 @@ enum msgtype {
 	DEV_CLOSE,
 	DEV_READ,
 	DEV_WRITE,
-	DEV_IOCTL
+	DEV_IOCTL,
+
+	/* for debug */
+	DISK_LOG
 };
 
 /* macros for messages , IPC消息相关的宏定义*/
@@ -171,6 +174,8 @@ enum msgtype {
 #define	OFFSET		u.m3.m3i2
 #define	WHENCE		u.m3.m3i3
 
+#define	PID		u.m3.m3i2
+#define	STATUS		u.m3.m3i1 
 #define	RETVAL		u.m3.m3i1
 
 
