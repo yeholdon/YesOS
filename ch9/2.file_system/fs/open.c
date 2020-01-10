@@ -123,7 +123,7 @@ PUBLIC int do_open()
             MESSAGE driver_msg;
             driver_msg.type = DEV_OPEN;
             int dev = p_inode->i_start_sect;
-            driver_msg.DEVICE - MINOR(dev);
+            driver_msg.DEVICE = MINOR(dev);
             assert(MAJOR(dev) == 4);
             assert(dev_to_dri_map[MAJOR(dev)].driver_nr != INVALID_DRIVER);
             send_recv(BOTH, dev_to_dri_map[MAJOR(dev)].driver_nr, &driver_msg);

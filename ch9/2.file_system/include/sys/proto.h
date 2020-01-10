@@ -141,7 +141,8 @@ PUBLIC  void scroll_screen(CONSOLE *p_con, int direction);
 // C库函数
 /* printf.c */
 PUBLIC  int     printf(const char *fmt, ...);
-#define	printl	printf  // printl宏定义为printf
+// #define	printl	printf  // printl宏定义为printf
+PUBLIC  int     printl(const char *fmt, ...);
 
 /* vsprintf.c */
 PUBLIC  int     vsprintf(char *buf, const char *fmt, va_list args);

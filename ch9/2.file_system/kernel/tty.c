@@ -46,53 +46,53 @@ PUBLIC void task_tty()
     // nr_current_console = 0; //默认当前console为0号
     select_console(0);
     // 轮询每个tty
-    // while (1) {
-	// 	for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++) {
-	// 		do {
-	// 			tty_dev_read(p_tty);
-	// 			tty_dev_write(p_tty);
-	// 		} while (p_tty->inbuf_count);
-	// 	}
-    //     assert(0);
-	// 	send_recv(RECEIVE, ANY, &msg);
+    while (1) {
+		for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++) {
+			do {
+				tty_dev_read(p_tty);
+				tty_dev_write(p_tty);
+			} while (p_tty->inbuf_count);
+		}
+        
+		send_recv(RECEIVE, ANY, &msg);
 
-	// 	int src = msg.source;
-	// 	assert(src != TASK_TTY);
+		int src = msg.source;
+		assert(src != TASK_TTY);
 
-	// 	TTY* ptty = &tty_table[msg.DEVICE];
+		TTY* ptty = &tty_table[msg.DEVICE];
 
-	// 	switch (msg.type) {
-	// 	case DEV_OPEN:
-	// 		reset_msg(&msg);
-	// 		msg.type = SYSCALL_RET;
-	// 		send_recv(SEND, src, &msg);
-	// 		break;
-	// 	case DEV_READ:
-	// 		tty_do_read(ptty, &msg);
-	// 		break;
-	// 	case DEV_WRITE:
-	// 		tty_do_write(ptty, &msg);
-	// 		break;
-	// 	case HARD_INT:
-	// 		/**
-	// 		 * waked up by clock_handler -- a key was just pressed
-	// 		 * @see clock_handler() inform_int()
-	// 		 */
-	// 		key_pressed = 0;
-	// 		continue;
-	// 	default:
-	// 		dump_msg("TTY::unknown msg", &msg);
-	// 		break;
-	// 	}
-	// }
+		switch (msg.type) {
+		case DEV_OPEN:
+			reset_msg(&msg);
+			msg.type = SYSCALL_RET;
+			send_recv(SEND, src, &msg);
+			break;
+		case DEV_READ:
+			tty_do_read(ptty, &msg);
+			break;
+		case DEV_WRITE:
+			tty_do_write(ptty, &msg);
+			break;
+		case HARD_INT:
+			/**
+			 * waked up by clock_handler -- a key was just pressed
+			 * @see clock_handler() inform_int()
+			 */
+			key_pressed = 0;
+			continue;
+		default:
+			dump_msg("TTY::unknown msg", &msg);
+			break;
+		}
+	}
 
-    while (1)
-    {
-        for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++) {
-            tty_dev_read(p_tty);
-            tty_dev_write(p_tty);
-        }
-    }
+    // while (1)
+    // {
+    //     for (p_tty = TTY_FIRST; p_tty < TTY_END; p_tty++) {
+    //         tty_dev_read(p_tty);
+    //         tty_dev_write(p_tty);
+    //     }
+    // }
     
 }
 

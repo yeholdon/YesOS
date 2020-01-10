@@ -209,18 +209,18 @@ void TestB()
 	char rdbuf[128];
 
 	while (1) {
-		write(fd_stdout, "$ ", 2);
-		int r = read(fd_stdin, rdbuf, 70);
-		rdbuf[r] = 0;
+		// write(fd_stdout, "$ ", 2);
+		// int r = read(fd_stdin, rdbuf, 70);
+		// rdbuf[r] = 0;
 
 		if (strcmp(rdbuf, "hello") == 0) {
-			write(fd_stdout, "hello world!\n", 13);
+			// write(fd_stdout, "hello world!\n", 13);
 		}
 		else {
 			if (rdbuf[0]) {
-				write(fd_stdout, "{", 1);
-				write(fd_stdout, rdbuf, r);
-				write(fd_stdout, "}\n", 2);
+				// write(fd_stdout, "{", 1);
+				// write(fd_stdout, rdbuf, r);
+				// write(fd_stdout, "}\n", 2);
 			}
 		}
 	}
@@ -233,13 +233,14 @@ void TestB()
  *======================================================================*/
 void TestC()
 {
-	int i = 0x2000;
-	while(1){
-		// disp_color_str("C.", BRIGHT | MAKE_COLOR(BLACK, RED));
-		// disp_int(get_ticks());
-		printf("C");
-		milli_delay(2000);
-	}
+	// int i = 0x2000;
+	// while(1){
+	// 	// disp_color_str("C.", BRIGHT | MAKE_COLOR(BLACK, RED));
+	// 	// disp_int(get_ticks());
+	// 	printf("C");
+	// 	milli_delay(2000);
+	// }
+	spin("TestC");
 }
 
 
