@@ -10,6 +10,7 @@
 #include  "proc.h"
 #include "global.h"
 #include "string.h"
+#include "stdio.h"
 
 // 函数声明
 PRIVATE void block(PROCESS* p);

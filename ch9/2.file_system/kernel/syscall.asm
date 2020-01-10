@@ -14,7 +14,7 @@ _NR_printx  equ 3
 INT_VECTOR_SYS_CALL equ 0x90            ;系统调用的中断向量号。不和别的重复即可
 
 global  get_ticks_syscall_version       ;导出系统调用的符号
-global  write
+global  write_syscall_version
 global sendrec
 global printx
 
@@ -33,7 +33,7 @@ get_ticks_syscall_version:
 ; ====================================================================================
 ;                          void write(char* buf, int len):
 ; ====================================================================================
-write:          ; 这里只管传参数即可，实现主体用C语言
+write_syscall_version:          ; 这里只管传参数即可，实现主体用C语言
     mov     eax, _NR_write
     mov     edx, [esp + 4]
     mov     ecx, [esp + 8]

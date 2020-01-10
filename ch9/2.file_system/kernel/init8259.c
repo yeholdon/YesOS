@@ -10,6 +10,7 @@
 #include "protect.h"
 #include "proto.h"
 #include "global.h"
+#include "stdio.h"
 
 /*======================================================================*
                             init_8259A

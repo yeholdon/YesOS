@@ -7,7 +7,7 @@
 #include "const.h"
 #include "string.h"
 #include "proto.h"
-
+#include "stdio.h"
 
 /*======================================================================*
                                 i2a

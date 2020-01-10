@@ -15,6 +15,7 @@
 #include "keyboard.h"
 #include "hd.h"
 #include "string.h"
+#include "stdio.h"
 
 PRIVATE void    init_hd();
 PRIVATE void	hd_cmd_out		(struct hd_cmd* cmd);
@@ -52,7 +53,6 @@ PUBLIC void task_hd()
 	// 怀疑的编译器BUG，先用>> 代替除法
     MESSAGE msg;
     init_hd();                                          // 先初始化，包括打开硬盘中断等
-
     while (1)
     {
         // 循环读取消息，主要是接收其他进程的磁盘IO请求消息
@@ -95,7 +95,7 @@ PUBLIC void task_hd()
 /**先初始化硬盘，打开硬盘的硬件中断，指定中断程序
  * <Ring 1> Check hard drive, set IRQ handler, enable IRQ and initialize data
  *          structures.
- *****************************************************************************/
+ ******************'***********************************************************/
 PRIVATE void init_hd()
 {
 	/* Get the number of drives from the BIOS data area */
@@ -154,7 +154,7 @@ PRIVATE void hd_close(int device) {
 	hd_info[drive].open_cnt--;
 }
 
-
+int cnt = 0;
 /*****************************************************************************
  *                                hd_rdwt
  *****************************************************************************/
@@ -189,6 +189,9 @@ PRIVATE void hd_rdwt(MESSAGE *pMsg)
 	cmd.lba_high = (sec_nr >> 16) & 0xFF;
 	cmd.device = MAKE_DEVICE_REG(1, drive, (sec_nr >> 24) & 0xF); // 主要用来确定操作模式和主从硬盘
 	cmd.command = (pMsg->type == DEV_READ) ? ATA_READ : ATA_WRITE;	// DEV_READ为msg type
+
+	
+
 	hd_cmd_out(&cmd);
 	
 	// 写完控制寄存器后开始读写操作
@@ -220,7 +223,6 @@ PRIVATE void hd_rdwt(MESSAGE *pMsg)
 		 bytes_left -= SECTOR_SIZE;
 		 la += SECTOR_SIZE;
 	 }
-	 
 }
 
 /*****************************************************************************

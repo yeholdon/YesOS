@@ -6,6 +6,10 @@
 #ifndef	_YE_TYPE_H_
 #define	_YE_TYPE_H_
 
+//仅仅用来区分局部和全局符号，增加代码可读性，无实际意义
+#define PUBLIC
+#define PRIVATE static
+
 typedef	unsigned int		u32;
 typedef	unsigned short		u16;
 typedef	unsigned char		u8;

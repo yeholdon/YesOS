@@ -15,6 +15,7 @@
 #include "tty.h"
 #include "console.h"
 #include "fs.h"
+#include "stdio.h"
 
 PUBLIC  PROCESS proc_table[NR_PROCS + NR_TASKS];		// 调度还是一起调度
 

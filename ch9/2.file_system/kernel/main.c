@@ -11,6 +11,7 @@
 #include "string.h"
 #include "proc.h"
 #include "global.h"
+#include "stdio.h"
 
 /*======================================================================*
                             kernel_main:内核主函数
@@ -136,13 +137,42 @@ PUBLIC  int kernel_main()
  *======================================================================*/
 void TestA()
 {
-	int i = 0;
-	while (1) {
-		// disp_color_str("A.", BRIGHT | MAKE_COLOR(BLACK, RED));
-		// disp_int(get_ticks());
-		// printf("<Ticks : %x>", get_ticks());
-		milli_delay(2000);
-	}
+	int fd;
+	int n;
+	const char filename[] = "blah";
+	const char bufw[] = "abcde";
+	const int rd_bytes = 3;
+	char bufr[rd_bytes];
+
+	assert(rd_bytes <= strlen(bufw));
+
+	/* create */
+	fd = open(filename, O_CREAT | O_RDWR);
+	assert(fd != -1);
+	printf("File created. fd: %d\n", fd);
+
+	/* write */
+	n = write(fd, bufw, strlen(bufw));
+	assert(n == strlen(bufw));
+
+	/* close */
+	close(fd);
+
+	/* open */
+	fd = open(filename, O_RDWR);
+	assert(fd != -1);
+	printf("File opened. fd: %d\n", fd);
+
+	/* read */
+	n = read(fd, bufr, rd_bytes);
+	assert(n == rd_bytes);
+	bufr[n] = 0;
+	printf("%d bytes read: %s\n", n, bufr);
+
+	/* close */
+	close(fd);
+
+	spin("TestA");
 }
 
 /*======================================================================*

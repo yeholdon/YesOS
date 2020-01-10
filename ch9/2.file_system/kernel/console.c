@@ -15,6 +15,7 @@
 #include "global.h"
 #include "keyboard.h"
 #include "proto.h"
+#include "stdio.h"
 
 PRIVATE void set_cursor(unsigned int position);
 PRIVATE void set_video_start_addr(u32 addr);

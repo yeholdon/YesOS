@@ -9,6 +9,7 @@
 #include "proto.h"
 #include "string.h"
 #include "global.h"
+#include "stdio.h"
 //要调用的两个asm函数的声明,挪动到统一存放声明的头文件proto.h和string.h中
 //PUBLIC  void*   memcpy(void* pDst, void*  pSrc, int iSize);     //涉及到指针的，用void具体再强转
 //PUBLIC void disp_str(char *pszInfo);

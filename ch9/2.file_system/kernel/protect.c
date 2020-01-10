@@ -11,6 +11,7 @@
 #include "proc.h"
 #include "proto.h"
 #include "string.h"
+#include "stdio.h"
 
 /* 本文件内的前置函数声明 */
 PRIVATE void init_idt_desc(unsigned char vector, u8 desc_type,

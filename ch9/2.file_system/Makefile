@@ -12,14 +12,15 @@ ENTRYOFFSET	=   0x400
 
 # Programs, flags, etc.
 ASM		= nasm
-DASM		= ndisasm
+DASM		= objdump
 CC		= gcc
 LD		= ld
 ASMBFLAGS	= -I boot/include/
-ASMKFLAGS	= -I include/ -f elf
-CFLAGS		= -m32 -I include/ -c -fno-builtin -fno-stack-protector
-LDFLAGS		= -m elf_i386 -s -Ttext $(ENTRYPOINT)
-DASMFLAGS	= -u -o $(ENTRYPOINT) -e $(ENTRYOFFSET)
+ASMKFLAGS	= -I include/ -I include/sys/ -f elf
+# CFLAGS		= -m32 -I include/ -c -fno-builtin -fno-stack-protector
+CFLAGS		= -m32 -I include/ -I include/sys/ -c -fno-builtin -fno-stack-protector
+LDFLAGS		= -m elf_i386 -s -Ttext $(ENTRYPOINT) -Map krnl.map
+DASMFLAGS	= -D
 
 # This Program
 YESBOOT	= boot/boot.bin boot/loader.bin
@@ -28,8 +29,8 @@ OBJS		= kernel/kernel.o kernel/syscall.o  kernel/keyboard.o kernel/start.o kerne
 						kernel/proc.o kernel/global.o kernel/protect.o  kernel/main.o kernel/clock.o \
 						kernel/tty.o kernel/console.o kernel/systask.o \
 						kernel/printf.o kernel/vsprintf.o kernel/hd.o \
-						lib/klib.o lib/kliba.o lib/string.o lib/misc.o \
-						fs/main.o
+						lib/klib.o lib/kliba.o lib/string.o lib/misc.o lib/open.o lib/close.o lib/read.o lib/write.o \
+						fs/main.o fs/open.o fs/misc.o fs/read_write.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -72,22 +73,19 @@ boot/loader.bin : boot/loader.asm boot/include/load.inc \
 $(YESKERNEL) : $(OBJS)
 	$(LD) $(LDFLAGS) -o $(YESKERNEL) $(OBJS)
 
-kernel/kernel.o : kernel/kernel.asm	include/sconst.inc
+kernel/kernel.o : kernel/kernel.asm	
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
-kernel/syscall.o : kernel/syscall.asm	include/sconst.inc
+kernel/syscall.o : kernel/syscall.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
-kernel/start.o: kernel/start.c include/type.h include/const.h  \
-											include/protect.h include/proto.h include/string.h  include/proc.h
+kernel/start.o: kernel/start.c 
 	$(CC) $(CFLAGS) -o $@ $<
 
-kernel/main.o: kernel/main.c include/type.h include/const.h include/protect.h include/string.h include/proc.h include/proto.h \
-			include/global.h
+kernel/main.o: kernel/main.c 
 	$(CC) $(CFLAGS) -o $@ $<
 
-kernel/init8259.o: kernel/init8259.c  include/type.h  include/const.h \
-													include/protect.h include/proto.h
+kernel/init8259.o: kernel/init8259.c  
 	$(CC) $(CFLAGS) -o $@ $<
 
 
@@ -107,11 +105,24 @@ lib/klib.o : lib/klib.c
 lib/misc.o : lib/misc.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+lib/open.o : lib/open.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/close.o : lib/close.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/read.o : lib/read.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/write.o : lib/write.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 lib/kliba.o : lib/kliba.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
 lib/string.o : lib/string.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
+
 
 
 #### 系统调用和进程
@@ -143,4 +154,13 @@ kernel/vsprintf.o : kernel/vsprintf.c
 
 #### 文件系统
 fs/main.o: fs/main.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+fs/open.o:fs/open.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+fs/misc.o:fs/misc.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+fs/read_write.o:fs/read_write.c
 	$(CC) $(CFLAGS) -o $@ $<

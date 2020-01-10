@@ -13,6 +13,7 @@
 #include "global.h"
 #include "keyboard.h"
 #include "keymap.h"
+#include "stdio.h"
 
 // 键盘缓冲区实例，静态全局变量，只能在本文件被访问
 PRIVATE KB_INPUT_BUF    kb_in;          // 需要初始化，在init_keboard()里
