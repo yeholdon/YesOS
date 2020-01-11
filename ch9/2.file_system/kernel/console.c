@@ -217,16 +217,16 @@ PUBLIC void init_screen(TTY *p_tty)
     }
     else 
     {
-        char prompt[20] = "Ye's OS - Console";
-        for (int i = 0; i < 17; i++)
-        {
-            out_char(p_tty->p_console, prompt[i]);
-        }
+        // char prompt[20] = "[Ye's OS-TTY #";
+        // for (int i = 0; i < 14; i++)
+        // {
+        //     out_char(p_tty->p_console, prompt[i]);
+        // }
         
-        out_char(p_tty->p_console, nr_tty + '0'); // 显示一个console序号
-        out_char(p_tty->p_console, ' ');  
-        out_char(p_tty->p_console, '$');                    // 再显示一个命令提示符
-        out_char(p_tty->p_console, ' ');                       // 提示符后加一个空格，好看点
+        // out_char(p_tty->p_console, nr_tty + '0'); // 显示一个console序号
+        // // out_char(p_tty->p_console, ' ');  
+        // // out_char(p_tty->p_console, '$');                    // 再显示一个命令提示符
+        // out_char(p_tty->p_console, ']');                       // 提示符后加一个空格，好看点
     }
     set_cursor(p_tty->p_console->cursor);           // 光标也初始化
 }

@@ -28,14 +28,10 @@ int printf(const char *fmt, ...)        // 这个其实不算操作系统的内�
     va_list arg = (va_list)((char *)(&fmt) + 4);        // va_list=char *。获取后面可变参数列表的首地址
     i = vsprintf(buf, fmt, arg);
     // 要输出的内容有了， 长度也有了，调用系统调用来借助系统输出
-    // write(buf, i);
     // 这里的printf调用的系统调用不再是write而是另外一个特殊的printx
     // 可以处理assert和panic错误
-    buf[i] = 0;
-    printx(buf);
-    // assert(0);
-    // int c = write(1, buf, i);
-    // assert(c == i);
+    int c = write(1, buf, i);
+    assert(c == i);
 
     return i;
 }
@@ -60,6 +56,11 @@ PUBLIC int printl(const char *fmt, ...)
 						     * 4: size of `fmt' in
 						     *    the stack
 						     */
+    // 要输出的内容有了， 长度也有了，调用系统调用来借助系统输出
+    // write(buf, i);
+    // 这里的printf调用的系统调用不再是write而是另外一个特殊的printx
+    // 可以处理assert和panic错误
+
 	i = vsprintf(buf, fmt, arg);
 	printx(buf);
 

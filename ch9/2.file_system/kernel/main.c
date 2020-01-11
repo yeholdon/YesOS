@@ -106,7 +106,7 @@ PUBLIC  int kernel_main()
 	// 初始化后重新赋值进程的tty
 	proc_table[NR_TASKS + 0].nr_tty = 0;
 	proc_table[NR_TASKS + 1].nr_tty = 1;
-	proc_table[NR_TASKS + 2].nr_tty = 1;
+	proc_table[NR_TASKS + 2].nr_tty = 2;
 
 	k_reenter = 0;			// 为了统一，现在在第一个进程执行前，也让k_reenter自增了，所以这里k_reenter初值要改一下
     ticks = 0;  
@@ -208,21 +208,16 @@ void TestB()
 
 	char rdbuf[128];
 
-	while (1) {
-		write(fd_stdout, "$ ", 2);
+	while (1) {  
+		printf("[Ye's OS-TTY #1]-$ ");
 		int r = read(fd_stdin, rdbuf, 70);
 		rdbuf[r] = 0;
 
-		if (strcmp(rdbuf, "hello") == 0) {
-			write(fd_stdout, "hello world!\n", 13);
-		}
-		else {
-			if (rdbuf[0]) {
-				write(fd_stdout, "{", 1);
-				write(fd_stdout, rdbuf, r);
-				write(fd_stdout, "}\n", 2);
-			}
-		}
+		if (strcmp(rdbuf, "hello") == 0)
+			printf("hello world!\n");
+		else
+			if (rdbuf[0])
+				printf("{%s}\n", rdbuf);
 	}
 
 	assert(0); /* never arrive here */
@@ -243,11 +238,27 @@ void TestC()
 	char tty_name[] = "/dev_tty2";
 
 	int fd_stdin  = open(tty_name, O_RDWR);
-	printl("fd_stdin:%d\n", fd_stdin);
-	// assert(fd_stdin  == 2);
+	// printl("fd_stdin:%d\n", fd_stdin);
+	assert(fd_stdin  == 0);
 	int fd_stdout = open(tty_name, O_RDWR);
-	printl("fd_stdout:%d\n", fd_stdout);
-	// assert(fd_stdout == 3);
+	// printl("fd_stdout:%d\n", fd_stdout);
+	assert(fd_stdout == 1);
+
+	char rdbuf[128];
+
+	while (1) {
+		printf("[Ye's OS-TTY #2]-$ ");
+		int r = read(fd_stdin, rdbuf, 70);
+		rdbuf[r] = 0;
+
+		if (strcmp(rdbuf, "hello") == 0)
+			printf("hello world!\n");
+		else
+			if (rdbuf[0])
+				printf("{%s}\n", rdbuf);
+	}
+
+	assert(0); /* never arrive here */
 	spin("TestC");
 }
 
