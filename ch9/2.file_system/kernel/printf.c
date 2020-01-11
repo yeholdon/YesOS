@@ -31,10 +31,11 @@ int printf(const char *fmt, ...)        // 这个其实不算操作系统的内�
     // write(buf, i);
     // 这里的printf调用的系统调用不再是write而是另外一个特殊的printx
     // 可以处理assert和panic错误
-    // buf[i] = 0;
-    // printx(buf);
-    int c = write(1, buf, i);
-    assert(c == i);
+    buf[i] = 0;
+    printx(buf);
+    // assert(0);
+    // int c = write(1, buf, i);
+    // assert(c == i);
 
     return i;
 }
