@@ -150,7 +150,7 @@ enum msgtype {
 	HARD_INT = 1,
 
 	/* SYS task */
-	GET_TICKS, GET_PID,
+	GET_TICKS, GET_PID, GET_RTC_TIME,
 	/* FS */
 	OPEN, CLOSE, READ, WRITE, LSEEK, STAT, UNLINK,
 

@@ -39,8 +39,21 @@ PUBLIC void task_sys()
             msg.RETVAL = ticks;
             send_recv(SEND, src_proc, &msg);
             break;
+		case GET_PID:
+			msg.type = SYSCALL_RET;
+			msg.PID = src_proc;
+			send_recv(SEND, src_proc, &msg);
+			break;
+		// case GET_RTC_TIME:
+		// 	msg.type = SYSCALL_RET;
+		// 	get_rtc_time(&t);
+		// 	phys_copy(va2la(src, msg.BUF),
+		// 		  va2la(TASK_SYS, &t),
+		// 		  sizeof(t));
+		// 	send_recv(SEND, src, &msg);
+		// 	break;
         default:
-            panic("unknown msg type");
+            panic("tasksys:unknown msg type");
             break;
         }
     }

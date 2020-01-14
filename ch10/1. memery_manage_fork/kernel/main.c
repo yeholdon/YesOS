@@ -57,17 +57,55 @@ PUBLIC  int kernel_main()
 		// p_proc->p_flags = 1;		
 
 		strcpy(p_proc->p_name, p_task->name);	// name of the process
-		p_proc->pid_parent = i;			// pid直接设为循环变量
+		p_proc->pid_parent = NO_TASK;			// pid直接设为循环变量
 
 		p_proc->ldt_sel = selector_ldt;     // idt选择子先设好了，另外还要生成其GDT里的描述符
 
-        // IDT的生成
-		memcpy(&p_proc->ldts[0], &gdt[SELECTOR_KERNEL_CS >> 3],
-		       sizeof(DESCRIPTOR));
-		p_proc->ldts[0].attr1 = DA_C | privilege<< 5;									// 更新
-		memcpy(&p_proc->ldts[1], &gdt[SELECTOR_KERNEL_DS >> 3],
-		       sizeof(DESCRIPTOR));	
-		p_proc->ldts[1].attr1 = DA_DRW | privilege << 5;							// 更新
+		if (strcmp(p_task->name, "INIT") != 0) 
+		{
+			// IDT的生成
+			// memcpy(&p_proc->ldts[0], &gdt[SELECTOR_KERNEL_CS >> 3],
+			// 		sizeof(DESCRIPTOR));
+			// p_proc->ldts[0].attr1 = DA_C | privilege<< 5;									// 更新
+			// memcpy(&p_proc->ldts[1], &gdt[SELECTOR_KERNEL_DS >> 3],
+			// 		sizeof(DESCRIPTOR));	
+			// p_proc->ldts[1].attr1 = DA_DRW | privilege << 5;							// 更新
+
+			p_proc->ldts[INDEX_LDT_C]  = gdt[SELECTOR_KERNEL_CS >> 3];
+			p_proc->ldts[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DS >> 3];
+
+			/* change the DPLs */
+			p_proc->ldts[INDEX_LDT_C].attr1  = DA_C   | privilege << 5;
+			p_proc->ldts[INDEX_LDT_RW].attr1 = DA_DRW | privilege<< 5;
+		}
+		else
+		{
+			unsigned int k_base;
+			unsigned int k_limit;
+			int ret = get_kernel_map(&k_base, &k_limit);
+			disp_int(k_base);
+			disp_str("\n");
+			disp_int(k_limit);
+			assert(ret == 0);
+			init_descriptor(&p_proc->ldts[INDEX_LDT_C],
+				  0, /* bytes before the entry point
+				      * are useless (wasted) for the
+				      * INIT process, doesn't matter
+				      */
+				  (k_base + k_limit) >> LIMIT_4K_SHIFT,
+				  DA_32 | DA_LIMIT_4K | DA_C | privilege<< 5);
+
+			init_descriptor(&p_proc->ldts[INDEX_LDT_RW],
+				  0, /* bytes before the entry point
+				      * are useless (wasted) for the
+				      * INIT process, doesn't matter
+				      */
+				  (k_base + k_limit) >> LIMIT_4K_SHIFT,
+				  DA_32 | DA_LIMIT_4K | DA_DRW | privilege << 5);
+		}
+		
+		
+
 		p_proc->regs.cs	= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK)
 			| SA_TIL | rpl;																				// 更新
 		p_proc->regs.ds	= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK)
@@ -97,7 +135,7 @@ PUBLIC  int kernel_main()
 		p_proc->next_sending = 0;
 
 		p_proc->ticks = p_proc->priority = priority;
-
+		
 		p_task_stack -= p_task->stacksize;
 		
 		selector_ldt += 1 << 3;
@@ -147,16 +185,19 @@ void Init()
 	assert(fd_stdout == 1);
 
 	printf("Init() is running ...\n");
-
-	// int pid = fork();
-	// if (pid != 0) { /* parent process */
-	// 	printf("parent is running, child pid:%d\n", pid);
-	// 	spin("parent");
+	// while(1){
+	// 	printl("Init");
+	// 	milli_delay(2000);
 	// }
-	// else {	/* child process */
-	// 	printf("child is running, pid:%d\n", getpid());
-	// 	spin("child");
-	// }
+	int pid = fork();
+	if (pid != 0) { /* parent process */
+		printf("parent is running, child pid:%d\n", pid);
+		spin("parent");
+	}
+	else {	/* child process */
+		printf("child is running, pid:%d\n", getpid());
+		spin("child");
+	}
 	spin("Init\n");
 }
 
@@ -221,6 +262,12 @@ void TestA()
 		else
 			printl("Failed to remove file: %s\n", rfilenames[i]);
 	}
+
+	// while(1){
+	// 	printl("A");
+	// 	milli_delay(2000);
+	// }
+
 	spin("TestA");
 }
 
@@ -229,6 +276,7 @@ void TestA()
  *======================================================================*/
 void TestB()
 {
+
 	char tty_name[] = "/dev_tty1";
 
 	int fd_stdin  = open(tty_name, O_RDWR);
@@ -237,7 +285,10 @@ void TestB()
 	assert(fd_stdout == 1);
 
 	char rdbuf[128];
-
+	// while(1){
+	// 	printl("B");
+	// 	milli_delay(2000);
+	// }
 	while (1) {  
 		printf("[Ye's OS-TTY #1]-$ ");
 		int r = read(fd_stdin, rdbuf, 70);
@@ -249,6 +300,9 @@ void TestB()
 			if (rdbuf[0])
 				printf("{%s}\n", rdbuf);
 	}
+
+
+
 	spin("TestB\n");
 	// assert(0); /* never arrive here */
 }
@@ -258,6 +312,8 @@ void TestB()
  *======================================================================*/
 void TestC()
 {
+
+
 	char tty_name[] = "/dev_tty2";
 
 	int fd_stdin  = open(tty_name, O_RDWR);
@@ -268,7 +324,10 @@ void TestC()
 	assert(fd_stdout == 1);
 
 	char rdbuf[128];
-
+	// while(1){
+	// 	printl("C");
+	// 	milli_delay(2000);
+	// }
 	while (1) {
 		printf("[Ye's OS-TTY #2]-$ ");
 		int r = read(fd_stdin, rdbuf, 70);
@@ -281,7 +340,8 @@ void TestC()
 				printf("{%s}\n", rdbuf);
 	}
 
-	assert(0); /* never arrive here */
+
+		assert(0); /* never arrive here */
 	spin("TestC");
 }
 
