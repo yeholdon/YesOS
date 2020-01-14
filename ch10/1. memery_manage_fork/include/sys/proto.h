@@ -42,6 +42,7 @@ PUBLIC int min(int a, int b);
 void restart();
 
 // main.c 
+void Init();
 void TestA();
 void TestB();
 void TestC();

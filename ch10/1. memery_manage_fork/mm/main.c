@@ -84,7 +84,7 @@ PRIVATE void init_mm()
 	memory_size = bp.mem_size;
 
 	/* print memory size */
-	printl("{MM} memsize:%dMB\n", memory_size / (1024 * 1024));
+	printl("{MM} memsize:%dMB\n", memory_size / (u32)(1024 * 1024));
 }
 
 

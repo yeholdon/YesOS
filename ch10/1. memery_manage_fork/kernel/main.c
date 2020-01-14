@@ -18,8 +18,7 @@
  *======================================================================*/
 PUBLIC  int kernel_main() 
 {
-    disp_str("-----\"kernel_main\" begins-----\n");
-
+   disp_str("-----\"kernel_main\" begins-----\n");
 
     // 下面初始化设置进程表
     TASK *p_task = task_table;
@@ -33,15 +32,11 @@ PUBLIC  int kernel_main()
 	u8	rpl;
 	int eflags;
 	int   priority;
-    for(int i=0;i<NR_TASKS + NR_PROCS;i++){		// 这里要分成用户进程和任务
-
-		// 新增，预留的进程表项
-		if (i >= NR_TASKS + NR_NATIVE_PROCS)
-		{
+    for(int i=0;i<NR_TASKS + NR_PROCS;i++, p_proc++, p_task++){		// 这里要分成用户进程和任务
+		if (i >= NR_TASKS + NR_NATIVE_PROCS) {
 			p_proc->p_flags = FREE_SLOT;
 			continue;
 		}
-		
 		if (i < NR_TASKS)		//先设置系统任务特权级
 		{
 			p_task = task_table + i;
@@ -50,7 +45,7 @@ PUBLIC  int kernel_main()
 			eflags = 0x1202;  // IF = 1, IOPL = 1
 			priority = 15;
 		}
-		else		// user processes
+		else
 		{
 			p_task = user_proc_table + (i - NR_TASKS);
 			privilege = PRIVILEGE_USER;
@@ -59,58 +54,20 @@ PUBLIC  int kernel_main()
 			priority = 5;
 		}
 		
-		
+		// p_proc->p_flags = 1;		
 
 		strcpy(p_proc->p_name, p_task->name);	// name of the process
-		// p_proc->pid = i;			// pid直接设为循环变量
-		// 因为除了init进程其余进程都是由fork得到，所以除了init其他进程的pid都先设为NO_TASK
-		p_proc->pid_parent = NO_TASK;
+		p_proc->pid_parent = i;			// pid直接设为循环变量
 
-		// 额外处理init进程
-		if (strcmp(p_task->name, "INIT") != 0)
-		{
-			p_proc->ldts[INDEX_LDT_C]  = gdt[SELECTOR_KERNEL_CS >> 3];
-			p_proc->ldts[INDEX_LDT_RW] = gdt[SELECTOR_KERNEL_DS >> 3];
+		p_proc->ldt_sel = selector_ldt;     // idt选择子先设好了，另外还要生成其GDT里的描述符
 
-			/* change the DPLs */
-			p_proc->ldts[INDEX_LDT_C].attr1  = DA_C   | priority << 5;
-			p_proc->ldts[INDEX_LDT_RW].attr1 = DA_DRW | priority << 5;
-		}
-		else
-		{		/* INIT process */
-			u32 k_base;
-			u32 k_limit;
-			// 从内存中读取内核的大小等参数用来设置init进程的进程空间
-			int ret = get_kernel_map(&k_base, &k_limit);
-			assert(ret == 0);
-			init_descriptor(&p_proc->ldts[INDEX_LDT_C],
-				  0, /* bytes before the entry point
-				      * are useless (wasted) for the
-				      * INIT process, doesn't matter
-				      */
-				  (k_base + k_limit) >> LIMIT_4K_SHIFT,
-				  DA_32 | DA_LIMIT_4K | DA_C | priority << 5);
-
-			init_descriptor(&p_proc->ldts[INDEX_LDT_RW],
-				  0, /* bytes before the entry point
-				      * are useless (wasted) for the
-				      * INIT process, doesn't matter
-				      */
-				  (k_base + k_limit) >> LIMIT_4K_SHIFT,
-				  DA_32 | DA_LIMIT_4K | DA_DRW | priority << 5);
-			
-		}
-		
-		// 这个放到protest.c/init_proc里
-		// p_proc->ldt_sel = selector_ldt;     // ldt选择子先设好了，另外还要生成其GDT里的描述符
-
-        // IDT的生成, 这部分放到init_proc里
-		// memcpy(&p_proc->ldts[0], &gdt[SELECTOR_KERNEL_CS >> 3],
-		//        sizeof(DESCRIPTOR));
-		// p_proc->ldts[0].attr1 = DA_C | privilege<< 5;									// 更新
-		// memcpy(&p_proc->ldts[1], &gdt[SELECTOR_KERNEL_DS >> 3],
-		//        sizeof(DESCRIPTOR));	
-		// p_proc->ldts[1].attr1 = DA_DRW | privilege << 5;							// 更新
+        // IDT的生成
+		memcpy(&p_proc->ldts[0], &gdt[SELECTOR_KERNEL_CS >> 3],
+		       sizeof(DESCRIPTOR));
+		p_proc->ldts[0].attr1 = DA_C | privilege<< 5;									// 更新
+		memcpy(&p_proc->ldts[1], &gdt[SELECTOR_KERNEL_DS >> 3],
+		       sizeof(DESCRIPTOR));	
+		p_proc->ldts[1].attr1 = DA_DRW | privilege << 5;							// 更新
 		p_proc->regs.cs	= ((8 * 0) & SA_RPL_MASK & SA_TI_MASK)
 			| SA_TIL | rpl;																				// 更新
 		p_proc->regs.ds	= ((8 * 1) & SA_RPL_MASK & SA_TI_MASK)
@@ -141,21 +98,18 @@ PUBLIC  int kernel_main()
 
 		p_proc->ticks = p_proc->priority = priority;
 
-		// 初始化填充filp[]
-		for (int j = 0; j < NR_FILES; j++)
-			p_proc->filp[j] = 0;
-
 		p_task_stack -= p_task->stacksize;
-		p_proc++;
-		p_task++;
-		// selector_ldt += 1 << 3;
+		
+		selector_ldt += 1 << 3;
 	}
 
 
-	// 初始化后重新赋值进程的tty
+	// 初始化后重新赋值进程的tty, 由于后面将tty纳入了文件系统，所以这里的初值决定的就是打开tty文件之前的，打开之后就没用了
+	// 所以作者的源码里这里就没有再特意赋值，而是保持默认值0
 	proc_table[NR_TASKS + 0].nr_tty = 0;
-	proc_table[NR_TASKS + 1].nr_tty = 1;
-	proc_table[NR_TASKS + 2].nr_tty = 2;
+	proc_table[NR_TASKS + 1].nr_tty = 0;
+	proc_table[NR_TASKS + 2].nr_tty = 1;
+	proc_table[NR_TASKS + 3].nr_tty = 2;
 
 	k_reenter = 0;			// 为了统一，现在在第一个进程执行前，也让k_reenter自增了，所以这里k_reenter初值要改一下
     ticks = 0;  
@@ -194,15 +148,16 @@ void Init()
 
 	printf("Init() is running ...\n");
 
-	int pid = fork();
-	if (pid != 0) { /* parent process */
-		printf("parent is running, child pid:%d\n", pid);
-		spin("parent");
-	}
-	else {	/* child process */
-		printf("child is running, pid:%d\n", getpid());
-		spin("child");
-	}
+	// int pid = fork();
+	// if (pid != 0) { /* parent process */
+	// 	printf("parent is running, child pid:%d\n", pid);
+	// 	spin("parent");
+	// }
+	// else {	/* child process */
+	// 	printf("child is running, pid:%d\n", getpid());
+	// 	spin("child");
+	// }
+	spin("Init\n");
 }
 
 
@@ -211,61 +166,62 @@ void Init()
  *======================================================================*/
 void TestA()
 {
-	// int fd;
-	// int i, n;
-	// const char filename[MAX_FILENAME_LEN+1] = "blah";
-	// const char bufw[] = "abcde";
-	// const int rd_bytes = 3;
-	// char bufr[rd_bytes];
 
-	// assert(rd_bytes <= strlen(bufw));
+	int fd;
+	int i, n;
+	const char filename[MAX_FILENAME_LEN+1] = "blah";
+	const char bufw[] = "abcde";
+	const int rd_bytes = 3;
+	char bufr[rd_bytes];
 
-	// /* create */
-	// fd = open(filename, O_CREAT | O_RDWR);
-	// assert(fd != -1);
-	// printl("File created: %s (fd %d)\n", filename, fd);
+	assert(rd_bytes <= strlen(bufw));
 
-	// /* write */
-	// n = write(fd, bufw, strlen(bufw));
-	// assert(n == strlen(bufw));
+	/* create */
+	fd = open(filename, O_CREAT | O_RDWR);
+	assert(fd != -1);
+	printl("File created: %s (fd %d)\n", filename, fd);
 
-	// /* close */
-	// close(fd);
+	/* write */
+	n = write(fd, bufw, strlen(bufw));
+	assert(n == strlen(bufw));
 
-	// /* open */
-	// fd = open(filename, O_RDWR);
-	// assert(fd != -1);
-	// printl("File opened. fd: %d\n", fd);
+	/* close */
+	close(fd);
 
-	// /* read */
-	// n = read(fd, bufr, rd_bytes);
-	// assert(n == rd_bytes);
-	// bufr[n] = 0;
-	// printl("%d bytes read: %s\n", n, bufr);
+	/* open */
+	fd = open(filename, O_RDWR);
+	assert(fd != -1);
+	printl("File opened. fd: %d\n", fd);
 
-	// /* close */
-	// close(fd);
+	/* read */
+	n = read(fd, bufr, rd_bytes);
+	assert(n == rd_bytes);
+	bufr[n] = 0;
+	printl("%d bytes read: %s\n", n, bufr);
 
-	// char * filenames[] = {"/foo", "/bar", "/baz"};
+	/* close */
+	close(fd);
 
-	// /* create files */
-	// for (i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
-	// 	fd = open(filenames[i], O_CREAT | O_RDWR);
-	// 	assert(fd != -1);
-	// 	printl("File created: %s (fd %d)\n", filenames[i], fd);
-	// 	close(fd);
-	// }
+	char * filenames[] = {"/foo", "/bar", "/baz"};
 
-	// char * rfilenames[] = {"/bar", "/foo", "/baz", "/dev_tty0"};
+	/* create files */
+	for (i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
+		fd = open(filenames[i], O_CREAT | O_RDWR);
+		assert(fd != -1);
+		printl("File created: %s (fd %d)\n", filenames[i], fd);
+		close(fd);
+	}
 
-	// /* remove files */
-	// for (i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
-	// 	if (unlink(rfilenames[i]) == 0)
-	// 		printl("File removed: %s\n", rfilenames[i]);
-	// 	else
-	// 		printl("Failed to remove file: %s\n", rfilenames[i]);
-	// }
-	// spin("TestA");
+	char * rfilenames[] = {"/bar", "/foo", "/baz", "/dev_tty0"};
+
+	/* remove files */
+	for (i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
+		if (unlink(rfilenames[i]) == 0)
+			printl("File removed: %s\n", rfilenames[i]);
+		else
+			printl("Failed to remove file: %s\n", rfilenames[i]);
+	}
+	spin("TestA");
 }
 
 /*======================================================================*
@@ -273,27 +229,27 @@ void TestA()
  *======================================================================*/
 void TestB()
 {
-	// char tty_name[] = "/dev_tty1";
+	char tty_name[] = "/dev_tty1";
 
-	// int fd_stdin  = open(tty_name, O_RDWR);
-	// assert(fd_stdin  == 0);
-	// int fd_stdout = open(tty_name, O_RDWR);
-	// assert(fd_stdout == 1);
+	int fd_stdin  = open(tty_name, O_RDWR);
+	assert(fd_stdin  == 0);
+	int fd_stdout = open(tty_name, O_RDWR);
+	assert(fd_stdout == 1);
 
-	// char rdbuf[128];
+	char rdbuf[128];
 
-	// while (1) {  
-	// 	printf("[Ye's OS-TTY #1]-$ ");
-	// 	int r = read(fd_stdin, rdbuf, 70);
-	// 	rdbuf[r] = 0;
+	while (1) {  
+		printf("[Ye's OS-TTY #1]-$ ");
+		int r = read(fd_stdin, rdbuf, 70);
+		rdbuf[r] = 0;
 
-	// 	if (strcmp(rdbuf, "hello") == 0)
-	// 		printf("hello world!\n");
-	// 	else
-	// 		if (rdbuf[0])
-	// 			printf("{%s}\n", rdbuf);
-	// }
-
+		if (strcmp(rdbuf, "hello") == 0)
+			printf("hello world!\n");
+		else
+			if (rdbuf[0])
+				printf("{%s}\n", rdbuf);
+	}
+	spin("TestB\n");
 	// assert(0); /* never arrive here */
 }
 
@@ -302,40 +258,31 @@ void TestB()
  *======================================================================*/
 void TestC()
 {
-	// int i = 0x2000;
-	// while(1){
-	// 	// disp_color_str("C.", BRIGHT | MAKE_COLOR(BLACK, RED));
-	// 	// disp_int(get_ticks());
-	// 	printf("C");
-	// 	milli_delay(2000);
-	// }
+	char tty_name[] = "/dev_tty2";
 
+	int fd_stdin  = open(tty_name, O_RDWR);
+	// printl("fd_stdin:%d\n", fd_stdin);
+	assert(fd_stdin  == 0);
+	int fd_stdout = open(tty_name, O_RDWR);
+	// printl("fd_stdout:%d\n", fd_stdout);
+	assert(fd_stdout == 1);
 
-	// char tty_name[] = "/dev_tty2";
+	char rdbuf[128];
 
-	// int fd_stdin  = open(tty_name, O_RDWR);
-	// // printl("fd_stdin:%d\n", fd_stdin);
-	// assert(fd_stdin  == 0);
-	// int fd_stdout = open(tty_name, O_RDWR);
-	// // printl("fd_stdout:%d\n", fd_stdout);
-	// assert(fd_stdout == 1);
+	while (1) {
+		printf("[Ye's OS-TTY #2]-$ ");
+		int r = read(fd_stdin, rdbuf, 70);
+		rdbuf[r] = 0;
 
-	// char rdbuf[128];
+		if (strcmp(rdbuf, "hello") == 0)
+			printf("hello world!\n");
+		else
+			if (rdbuf[0])
+				printf("{%s}\n", rdbuf);
+	}
 
-	// while (1) {
-	// 	printf("[Ye's OS-TTY #2]-$ ");
-	// 	int r = read(fd_stdin, rdbuf, 70);
-	// 	rdbuf[r] = 0;
-
-	// 	if (strcmp(rdbuf, "hello") == 0)
-	// 		printf("hello world!\n");
-	// 	else
-	// 		if (rdbuf[0])
-	// 			printf("{%s}\n", rdbuf);
-	// }
-
-	// assert(0); /* never arrive here */
-	// spin("TestC");
+	assert(0); /* never arrive here */
+	spin("TestC");
 }
 
 

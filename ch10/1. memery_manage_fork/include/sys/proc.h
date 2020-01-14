@@ -132,8 +132,9 @@ typedef struct s_task {
 
 #define proc2pid(x) (x - proc_table)
 /* Number of tasks & procs , 分成Tasks和Processes*/
-#define NR_TASKS    45// 进程数
+#define NR_TASKS    5// 进程数
 #define NR_PROCS	32
+// #define NR_PROCS 4
 #define NR_NATIVE_PROCS	4		// 系统初启动时的用户进程数
 #define FIRST_PROC		proc_table[0]
 #define LAST_PROC		proc_table[NR_TASKS + NR_PROCS - 1]

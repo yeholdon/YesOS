@@ -27,14 +27,17 @@ PUBLIC  char    task_stack[STACK_SIZE_TOTAL];
  这只是暂时的，后面应该有专门的方法来新建一个用户进程，而不是像现在用宏定义预先定义好用户进程数
 应该要能够动态新建回收用户进程
 */
-PUBLIC	TASK	user_proc_table[NR_PROCS] = {		
+PUBLIC	TASK	user_proc_table[NR_NATIVE_PROCS] = {		
+					{Init, STACK_SIZE_INIT, "INIT"}, 
 					{TestA, STACK_SIZE_TESTA, "TestA"}, 
 					{TestB, STACK_SIZE_TESTB, "TestB"}, 
-					{TestC, STACK_SIZE_TESTC, "TestC"}};
+					{TestC, STACK_SIZE_TESTC, "TestC"}
+					};
 PUBLIC	TASK	task_table[NR_TASKS] = { {task_tty, STACK_SIZE_TTY, "tty"},
 																					  {task_sys, STACK_SIZE_SYS, "sys"},
 																					  {task_hd,  STACK_SIZE_HD,  "HD" },
 																					  {task_fs,  STACK_SIZE_FS,  "FS" }, 
+																					  {task_mm, STACK_SIZE_MM, "MM"}
 																					  };
 
 PUBLIC	irq_handler irq_table[NR_IRQ];		// 声明在global.h中。NR_IRQ=16，以对应主从两个8259A，定义在const.h中
