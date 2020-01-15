@@ -5,7 +5,7 @@
  */
 #ifndef _YE_STDIO_H_
 #define _YE_STDIO_H_
-#include "config.h"
+#include "type.h"
 /* the assert macro */
 #define ASSERT			//要assert起作用的时候加上
 #ifdef	ASSERT
