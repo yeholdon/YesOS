@@ -28,9 +28,9 @@ YESKERNEL	= kernel.bin
 OBJS		= kernel/kernel.o kernel/syscall.o  kernel/keyboard.o kernel/start.o kernel/init8259.o  \
 						kernel/proc.o kernel/global.o kernel/protect.o  kernel/main.o kernel/clock.o \
 						kernel/tty.o kernel/console.o kernel/systask.o \
-						kernel/printf.o kernel/vsprintf.o kernel/hd.o \
+						kernel/vsprintf.o kernel/hd.o \
 						lib/klib.o lib/kliba.o lib/string.o lib/misc.o lib/open.o lib/close.o lib/read.o lib/write.o \
-						lib/syslog.o lib/getpid.o lib/unlink.o lib/fork.o lib/exit.o lib/wait.o \
+						lib/printf.o lib/vsprintf.o lib/syslog.o lib/getpid.o lib/unlink.o lib/fork.o lib/exit.o lib/wait.o \
 						fs/main.o fs/open.o fs/misc.o fs/read_write.o fs/disklog.o fs/link.o \
 						mm/main.o mm/fork.o mm/exit.o mm/wait.o
 DASMOUTPUT	= kernel.bin.asm
@@ -163,10 +163,10 @@ kernel/hd.o: kernel/hd.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 #### C库函数
-kernel/printf.o : kernel/printf.c
+lib/printf.o : lib/printf.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-kernel/vsprintf.o : kernel/vsprintf.c
+lib/vsprintf.o : lib/vsprintf.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 #### 文件系统fs
