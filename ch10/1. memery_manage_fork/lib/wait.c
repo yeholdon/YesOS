@@ -1,7 +1,7 @@
 /**************************************************************
- * lib/exit.c
+ * lib/wait.c
  * 程序功能：退出进程系统调用
- * 修改日期：2020.1.13
+ * 修改日期：2020.1.15
  */
 
 #include "type.h"
@@ -16,20 +16,24 @@
 #include "global.h"
 #include "proto.h"
 
-
 /*****************************************************************************
- *                                exit
- *************************************************************************//**
- * Terminate the current process.
- * 
- * @param status  The value returned to the parent.
+ *                                wait
  *****************************************************************************/
-PUBLIC void exit(int status)
+/**
+ * Wait for the child process to terminiate.
+ * 
+ * @param status  The value returned from the child.
+ * 
+ * @return  PID of the terminated child.
+ *****************************************************************************/
+PUBLIC int wait(int * status)
 {
 	MESSAGE msg;
-	msg.type	= EXIT;
-	msg.STATUS	= status;
+	msg.type   = WAIT;
 
 	send_recv(BOTH, TASK_MM, &msg);
-	assert(msg.type == SYSCALL_RET);
+
+	*status = msg.STATUS;
+
+	return (msg.PID == NO_TASK ? -1 : msg.PID);
 }

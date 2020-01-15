@@ -112,7 +112,7 @@ PUBLIC int do_open()
 		f_desc_table[i].fd_inode = p_inode;
 
 		f_desc_table[i].fd_mode = flags;
-		/* f_desc_table[i].fd_cnt = 1; */
+		f_desc_table[i].fd_cnt = 1; 
 		f_desc_table[i].fd_pos = 0;
 
         // 判断文件的类型

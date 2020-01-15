@@ -77,9 +77,9 @@ PUBLIC void task_fs()
 		 case FORK: 
 		 	fs_msg.RETVAL = fs_fork(); 
 		 	break; 
-		/* case EXIT: */
-		/* 	fs_msg.RETVAL = fs_exit(); */
-		/* 	break; */
+		 case EXIT: 
+		 	fs_msg.RETVAL = fs_exit(); 
+		 	break; 
 		/* case STAT: */
 		/* 	fs_msg.RETVAL = do_stat(); */
 		/* 	break; */
@@ -301,7 +301,6 @@ PRIVATE void mkfs()
 }
 
 
-int c = 0;
 /*****************************************************************************
  *                                rw_sector:IPC发消息给驱动，读/写一个扇区
  *****************************************************************************/
@@ -519,8 +518,36 @@ PRIVATE int fs_fork()
 			// 两个进程共享同一个文件，及同一个文件描述符
 			child->filp[i]->fd_cnt++;
 			child->filp[i]->fd_inode->i_cnt++;
+			// printl("child->filp[i]->fd_cnt:%d\n", child->filp[i]->fd_cnt);
+			// printl("child->filp[i]->fd_inode->i_cnt:%d\n", child->filp[i]->fd_inode->i_cnt);
 		}
 	}
 
 	return 0;
 }
+
+/*****************************************************************************
+ *                                fs_exit
+ *****************************************************************************/
+/**
+ * Perform the aspects of exit() that relate to files.
+ * 
+ * @return Zero if success.
+ *****************************************************************************/
+PRIVATE int fs_exit()
+{
+	int i;
+	struct s_proc* p = &proc_table[fs_msg.PID];
+	for (i = 0; i < NR_FILES; i++) {
+		if (p->filp[i]) {
+			/* release the inode */
+			p->filp[i]->fd_inode->i_cnt--;
+			/* release the file desc slot */
+			if (--p->filp[i]->fd_cnt == 0)
+				p->filp[i]->fd_inode = 0;
+			p->filp[i] = 0;
+		}
+	}
+	return 0;
+}
+

@@ -45,14 +45,14 @@ PUBLIC void task_mm()
 			mm_msg.RETVAL = do_fork();
 			break;
 		case EXIT:
-			// do_exit(mm_msg.STATUS);
+			do_exit(mm_msg.STATUS);
 			reply = 0;
 			break;
 		/* case EXEC: */
 		/* 	mm_msg.RETVAL = do_exec(); */
 		/* 	break; */
 		case WAIT:
-			// do_wait();
+			do_wait();
 			reply = 0;
 			break;
 		default:

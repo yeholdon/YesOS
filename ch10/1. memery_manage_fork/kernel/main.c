@@ -83,9 +83,6 @@ PUBLIC  int kernel_main()
 			unsigned int k_base;
 			unsigned int k_limit;
 			int ret = get_kernel_map(&k_base, &k_limit);
-			disp_int(k_base);
-			disp_str("\n");
-			disp_int(k_limit);
 			assert(ret == 0);
 			init_descriptor(&p_proc->ldts[INDEX_LDT_C],
 				  0, /* bytes before the entry point
@@ -135,9 +132,12 @@ PUBLIC  int kernel_main()
 		p_proc->next_sending = 0;
 
 		p_proc->ticks = p_proc->priority = priority;
-		
+
+		for (int j = 0; j < NR_FILES; j++)
+			p_proc->filp[j] = 0;
+
 		p_task_stack -= p_task->stacksize;
-		
+
 		selector_ldt += 1 << 3;
 	}
 
@@ -192,12 +192,21 @@ void Init()
 	int pid = fork();
 	if (pid != 0) { /* parent process */
 		printf("parent is running, child pid:%d\n", pid);
-		spin("parent");
+		int s;
+		int child = wait(&s);
+		printf("child (%d) exited with status: %d.\n", child, s);
 	}
 	else {	/* child process */
 		printf("child is running, pid:%d\n", getpid());
-		spin("child");
+		exit(123);
 	}
+
+	while (1) {
+		int s;
+		int child = wait(&s);
+		printf("child (%d) exited with status: %d.\n", child, s);
+	}
+
 	spin("Init\n");
 }
 
@@ -263,10 +272,7 @@ void TestA()
 			printl("Failed to remove file: %s\n", rfilenames[i]);
 	}
 
-	// while(1){
-	// 	printl("A");
-	// 	milli_delay(2000);
-	// }
+
 
 	spin("TestA");
 }
