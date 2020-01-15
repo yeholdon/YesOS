@@ -218,12 +218,12 @@ PRIVATE void mkfs()
 	
 	// 下面设置inode map
 	memset(fsbuf, 0, SECTOR_SIZE);	// 用缓冲区时都先初始化，用多少初始化多少
-	for (int i = 0; i < (NR_CONSOLES + 2); i++)
+	for (int i = 0; i < (NR_CONSOLES + 3); i++)    // +2 改成 +2多了一个文件inst.tar
 	{
 		// tty等也看成是文件来管理，万物皆文件是Linux的一大特点
 		fsbuf[0] |= 1 << i;			// 把前NR_CONSOLES + 2 bit置1，表示创建了相应文件
 	}
-	assert(fsbuf[0] == 0x1F);/* 0001 1111 : 
+	assert(fsbuf[0] == 0x3F);/* 0011 1111 : 
 				  *    | ||||
 				  *    | |||`--- bit 0 : reserved
 				  *    | ||`---- bit 1 : the first inode,
@@ -233,7 +233,7 @@ PRIVATE void mkfs()
 				  *    `-------- bit 4 : /dev_tty2
 				  */
 	
-	WR_SECT(ROOT_DEV, 1 + sb.nr_imap_sects );	// 第2扇区是inode map
+	WR_SECT(ROOT_DEV, 2);	// 第2扇区是inode map
 
 	// sector map
 	memset(fsbuf, 0, SECTOR_SIZE);
@@ -256,6 +256,30 @@ PRIVATE void mkfs()
 	for (int i = 1; i < sb.nr_smap_sects; i++)
 		WR_SECT(ROOT_DEV, 1 + sb.nr_imap_sects + 1 + i);
 	
+	/* cmd.tar */
+	/* make sure it'll not be overwritten by the disk log */
+	assert(INSTALL_START_SECT + INSTALL_NR_SECTS < 
+	       sb.nr_sects - NR_SECTS_FOR_LOG);
+	int bit_offset = INSTALL_START_SECT -
+		sb.n_1st_sect + 1; /* sect M <-> bit (M - sb.n_1stsect + 1) */
+	int bit_off_in_sect = bit_offset % (SECTOR_SIZE * 8);
+	int bit_left = INSTALL_NR_SECTS;
+	int cur_sect = bit_offset / (SECTOR_SIZE * 8);
+	RD_SECT(ROOT_DEV, 2 + sb.nr_imap_sects + cur_sect);
+	while (bit_left) {
+		int byte_off = bit_off_in_sect / 8;
+		/* this line is ineffecient in a loop, but I don't care */
+		fsbuf[byte_off] |= 1 << (bit_off_in_sect % 8);
+		bit_left--;
+		bit_off_in_sect++;
+		if (bit_off_in_sect == (SECTOR_SIZE * 8)) {
+			WR_SECT(ROOT_DEV, 2 + sb.nr_imap_sects + cur_sect);
+			cur_sect++;
+			RD_SECT(ROOT_DEV, 2 + sb.nr_imap_sects + cur_sect);
+			bit_off_in_sect = 0;
+		}
+	}
+	WR_SECT(ROOT_DEV, 2 + sb.nr_imap_sects + cur_sect);
 
 	/************************/
 	/*       inodes         */
@@ -264,9 +288,10 @@ PRIVATE void mkfs()
 	memset(fsbuf, 0, SECTOR_SIZE);
 	struct inode * pi = (struct inode*)fsbuf;	// 以inode结构为步长，所以转成相应类型的指针方便设置
 	pi->i_mode = I_DIRECTORY;
-	pi->i_size = DIR_ENTRY_SIZE * 4; /* 4 files:
+	pi->i_size = DIR_ENTRY_SIZE * 5; /* 4 files:+1
 					  * `.', 所以根目录的大小是包含了其下所有文件的大小之和的
 					  * `dev_tty0', `dev_tty1', `dev_tty2',
+					  * 	cmd.tar
 					  */
 	pi->i_start_sect = sb.n_1st_sect;
 	pi->i_nr_sects = NR_DEFAULT_FILE_SECTS;	// 扁平模型，就一个/所以前面开的总的使用的扇区数就是它
@@ -278,6 +303,13 @@ PRIVATE void mkfs()
 		pi->i_start_sect = MAKE_DEV(DEV_CHAR_TTY, i);
 		pi->i_nr_sects = 0;
 	}
+
+	/* inode of `/cmd.tar' */
+	pi = (struct inode*)(fsbuf + (INODE_SIZE * (NR_CONSOLES + 1)));
+	pi->i_mode = I_REGULAR;
+	pi->i_size = INSTALL_NR_SECTS * SECTOR_SIZE;
+	pi->i_start_sect = INSTALL_START_SECT;
+	pi->i_nr_sects = INSTALL_NR_SECTS;
 	WR_SECT(ROOT_DEV, 1 + sb.nr_imap_sects + sb.nr_smap_sects + 1);
 
 	// 文件本身
@@ -297,6 +329,10 @@ PRIVATE void mkfs()
 		pde->inode_nr = i + 2; /* dev_tty0's inode_nr is 2 */
 		sprintf(pde->name, "dev_tty%d", i);	// 可见文件名是不带/号的
 	}
+	// 两行新增
+	(++pde)->inode_nr = NR_CONSOLES + 2;
+	strcpy(pde->name, "cmd.tar");
+
 	WR_SECT(ROOT_DEV, sb.n_1st_sect);	
 }
 

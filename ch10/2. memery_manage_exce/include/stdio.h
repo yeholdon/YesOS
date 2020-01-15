@@ -34,6 +34,13 @@ void	assertion_failure(char *exp, char *file, char *base_file, int line);
 
 #define	MAX_PATH	128     // 文件路径的最大字符长度
 
+/* printf.c */
+PUBLIC  int     printf(const char *fmt, ...);
+PUBLIC  int     printl(const char *fmt, ...);
+
+/* vsprintf.c */
+PUBLIC  int     vsprintf(char *buf, const char *fmt, va_list args);
+PUBLIC	int	sprintf(char *buf, const char *fmt, ...);
 
 /*--------*/
 /* 库函数 */
