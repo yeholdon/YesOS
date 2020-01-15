@@ -139,6 +139,8 @@ PUBLIC int		free_mem(int pid);
 PUBLIC int		do_fork();
 PUBLIC void		do_exit(int status);
 PUBLIC void		do_wait();
+/* mm/exec.c */
+PUBLIC int		do_exec();
 
 /* tty */
 PUBLIC  void task_tty();

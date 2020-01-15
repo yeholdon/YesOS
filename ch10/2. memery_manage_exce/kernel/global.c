@@ -75,3 +75,18 @@ struct dev_drv_map dev_to_dri_map[] = {
  */
 PUBLIC	u8 *		fsbuf		= (u8*)0x600000;
 PUBLIC	const int	FSBUF_SIZE	= 0x100000;
+
+/**
+ * 7MB~8MB: buffer for MM
+ */
+PUBLIC	u8 *		mmbuf		= (u8*)0x700000;
+PUBLIC	const int	MMBUF_SIZE	= 0x100000;
+
+
+/**
+ * 8MB~10MB: buffer for log (debug)
+ */
+PUBLIC	char *		logbuf		= (char*)0x800000;
+PUBLIC	const int	LOGBUF_SIZE	= 0x100000;
+PUBLIC	char *		logdiskbuf	= (char*)0x900000;
+PUBLIC	const int	LOGDISKBUF_SIZE	= 0x100000;

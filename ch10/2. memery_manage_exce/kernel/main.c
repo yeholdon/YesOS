@@ -121,7 +121,7 @@ PUBLIC  int kernel_main()
 		p_proc->regs.esp = (u32)p_task_stack;
 		p_proc->regs.eflags = eflags;  // 更新
 
-		p_proc->nr_tty = 0;				// 默认进程与tty0绑定，后面再修改
+		// p_proc->nr_tty = 0;				// 默认进程与tty0绑定，后面再修改
 		// 这一波IPC相关的进程属性初始化别忘记
 		p_proc->p_flags = 0;
 		p_proc->p_msg = 0;
@@ -144,10 +144,10 @@ PUBLIC  int kernel_main()
 
 	// 初始化后重新赋值进程的tty, 由于后面将tty纳入了文件系统，所以这里的初值决定的就是打开tty文件之前的，打开之后就没用了
 	// 所以作者的源码里这里就没有再特意赋值，而是保持默认值0
-	proc_table[NR_TASKS + 0].nr_tty = 0;
-	proc_table[NR_TASKS + 1].nr_tty = 0;
-	proc_table[NR_TASKS + 2].nr_tty = 1;
-	proc_table[NR_TASKS + 3].nr_tty = 2;
+	// proc_table[NR_TASKS + 0].nr_tty = 0;
+	// proc_table[NR_TASKS + 1].nr_tty = 0;
+	// proc_table[NR_TASKS + 2].nr_tty = 1;
+	// proc_table[NR_TASKS + 3].nr_tty = 2;
 
 	k_reenter = 0;			// 为了统一，现在在第一个进程执行前，也让k_reenter自增了，所以这里k_reenter初值要改一下
     ticks = 0;  
@@ -255,6 +255,75 @@ void untar(const char * filename)
 
 
 /*****************************************************************************
+ *                                shabby_shell
+ *****************************************************************************/
+/**
+ * A very very simple shell.
+ * 
+ * @param tty_name  TTY file name.
+ *****************************************************************************/
+void shabby_shell(const char * tty_name)
+{
+	int fd_stdin  = open(tty_name, O_RDWR);
+	assert(fd_stdin  == 0);
+	int fd_stdout = open(tty_name, O_RDWR);
+	assert(fd_stdout == 1);
+
+	char rdbuf[128];
+
+	while (1) {
+		write(1, "$ ", 2);
+		int r = read(0, rdbuf, 70);
+		rdbuf[r] = 0;
+
+		int argc = 0;
+		char * argv[PROC_ORIGIN_STACK];
+		char * p = rdbuf;
+		char * s;
+		int word = 0;
+		char ch;
+		do {
+			ch = *p;
+			if (*p != ' ' && *p != 0 && !word) {
+				s = p;
+				word = 1;
+			}
+			if ((*p == ' ' || *p == 0) && word) {
+				word = 0;
+				argv[argc++] = s;
+				*p = 0;
+			}
+			p++;
+		} while(ch);
+		argv[argc] = 0;
+
+		int fd = open(argv[0], O_RDWR);
+		if (fd == -1) {
+			if (rdbuf[0]) {
+				write(1, "{", 1);
+				write(1, rdbuf, r);
+				write(1, "}\n", 2);
+			}
+		}
+		else {
+			close(fd);
+			int pid = fork();
+			if (pid != 0) { /* parent */
+				int s;
+				wait(&s);
+			}
+			else {	/* child */
+				execv(argv[0], argv);
+			}
+		}
+	}
+
+	close(1);
+	close(0);
+}
+
+
+/*****************************************************************************
  *                                Init:所有进程的祖先进程 
  *****************************************************************************/
 void Init()
@@ -268,18 +337,24 @@ void Init()
 
 	/* extract `cmd.tar' */
 	untar("/cmd.tar");
+			
 
-#if 0
-	int pid = fork();
-	if (pid != 0) { /* parent process */
-		printf("parent is running, child pid:%d\n", pid);
-		int s;
-		int child = wait(&s);
-		printf("child (%d) exited with status: %d.\n", child, s);
-	}
-	else {	/* child process */
-		printf("child is running, pid:%d\n", getpid());
-		exit(123);
+	char * tty_list[] = {"/dev_tty1", "/dev_tty2"};
+
+	int i;
+	for (i = 0; i < sizeof(tty_list) / sizeof(tty_list[0]); i++) {
+		int pid = fork();
+		if (pid != 0) { /* parent process */
+			// printf("[parent is running, child pid:%d]\n", pid);
+		}
+		else {	/* child process */
+			// printf("[child is running, pid:%d]\n", getpid());
+			close(fd_stdin);
+			close(fd_stdout);
+			
+			shabby_shell(tty_list[i]);
+			assert(0);
+		}
 	}
 
 	while (1) {
@@ -287,7 +362,6 @@ void Init()
 		int child = wait(&s);
 		printf("child (%d) exited with status: %d.\n", child, s);
 	}
-#endif
 	spin("Init\n");
 }
 

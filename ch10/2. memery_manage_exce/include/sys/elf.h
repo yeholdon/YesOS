@@ -18,6 +18,8 @@
 #define SHF_WRITE	     (1 << 0)	/* Writable */
 #define SHF_ALLOC	     (1 << 1)	/* Occupies memory during execution */
 
+#define PT_LOAD		1		/* Loadable program segment */
+
 /* Type for a 16-bit quantity.  */
 typedef u16 Elf32_Half;
 typedef u16 Elf64_Half;
@@ -77,5 +79,18 @@ typedef struct
   Elf32_Word	sh_addralign;		/* Section alignment */
   Elf32_Word	sh_entsize;		/* Entry size if section holds table */
 } Elf32_Shdr;
+
+
+typedef struct
+{
+  Elf32_Word	p_type;			/* Segment type */
+  Elf32_Off	p_offset;		/* Segment file offset */
+  Elf32_Addr	p_vaddr;		/* Segment virtual address */
+  Elf32_Addr	p_paddr;		/* Segment physical address */
+  Elf32_Word	p_filesz;		/* Segment size in file */
+  Elf32_Word	p_memsz;		/* Segment size in memory */
+  Elf32_Word	p_flags;		/* Segment flags */
+  Elf32_Word	p_align;		/* Segment alignment */
+} Elf32_Phdr;
 
 #endif

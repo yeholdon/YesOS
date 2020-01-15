@@ -117,7 +117,7 @@ typedef struct s_proc {
 				    * queue (q_sending)
 				    */
 
-	int nr_tty;					// 为了将进程与TTY对应添加的。
+	// int nr_tty;					// 为了将进程与TTY对应添加的。
 
 	// 当前进程占用的文件的指针，最多的占用NR_FILES个
 	struct file_desc *filp[NR_FILES];

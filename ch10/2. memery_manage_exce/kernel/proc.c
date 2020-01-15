@@ -619,7 +619,7 @@ PUBLIC void dump_proc(struct s_proc* p)
 	sprintf(info, "p_flags: 0x%x.  ", p->p_flags); disp_color_str(info, text_color);
 	sprintf(info, "p_recvfrom: 0x%x.  ", p->p_recvfrom); disp_color_str(info, text_color);
 	sprintf(info, "p_sendto: 0x%x.  ", p->p_sendto); disp_color_str(info, text_color);
-	sprintf(info, "nr_tty: 0x%x.  ", p->nr_tty); disp_color_str(info, text_color);
+	// sprintf(info, "nr_tty: 0x%x.  ", p->nr_tty); disp_color_str(info, text_color);
 	disp_color_str("\n", text_color);
 	sprintf(info, "has_int_msg: 0x%x.  ", p->has_int_msg); disp_color_str(info, text_color);
 }

@@ -102,24 +102,24 @@ PUBLIC void do_exit(int status)
 	p->exit_status = status;
 
 	if (proc_table[parent_pid].p_flags & WAITING) { /* parent is waiting */
-		printl("{MM} ((--do_exit():: %s (%d) is WAITING, %s (%d) will be cleaned up.--))\n",
-		       proc_table[parent_pid].p_name, parent_pid,
-		       p->p_name, pid);
+		// printl("{MM} ((--do_exit():: %s (%d) is WAITING, %s (%d) will be cleaned up.--))\n",
+		    //    proc_table[parent_pid].p_name, parent_pid,
+		    //    p->p_name, pid);
 		/* dump_fd_graph("((--do_exit():: %s (%d) is WAITING, %s (%d) will be cleaned up.--))", */
 		/*        proc_table[parent_pid].name, parent_pid, */
 		/*        p->name, pid); */
 		/* assert(proc_table[parent_pid].p_flags & RECEIVING); */
-		printl("{MM} ((--do_exit():1: proc_table[parent_pid].p_flags: 0x%x--))\n",
-		       proc_table[parent_pid].p_flags);
+		// printl("{MM} ((--do_exit():1: proc_table[parent_pid].p_flags: 0x%x--))\n",
+		    //    proc_table[parent_pid].p_flags);
 		/* dump_fd_graph("((--do_exit():1: proc_table[parent_pid].p_flags: 0x%x--))", */
 		/*        proc_table[parent_pid].p_flags); */
 		proc_table[parent_pid].p_flags &= ~WAITING;
 		cleanup(&proc_table[pid]);
 	}
 	else { /* parent is not waiting */
-		printl("{MM} ((--do_exit():: %s (%d) is not WAITING, %s (%d) will be HANGING--))\n",
-		       proc_table[parent_pid].p_name, parent_pid,
-		       p->p_name, pid);
+		// printl("{MM} ((--do_exit():: %s (%d) is not WAITING, %s (%d) will be HANGING--))\n",
+		    //    proc_table[parent_pid].p_name, parent_pid,
+		    //    p->p_name, pid);
 		/* dump_fd_graph("((--do_exit():: %s (%d) is not WAITING, %s (%d) will be HANGING--))", */
 		/*        proc_table[parent_pid].name, parent_pid, */
 		/*        p->name, pid); */
@@ -130,12 +130,12 @@ PUBLIC void do_exit(int status)
 	for (i = 0; i < NR_TASKS + NR_PROCS; i++) {
 		if (proc_table[i].pid_parent == pid) { /* is a child */
 			proc_table[i].pid_parent = INIT; /* FIXME: make sure INIT always waits */
-			printl("{MM} %s (%d) exit(), so %s (%d) is INIT's child now\n",
-			       p->p_name, pid, proc_table[i].p_name, i);
+			// printl("{MM} %s (%d) exit(), so %s (%d) is INIT's child now\n",
+			    //    p->p_name, pid, proc_table[i].p_name, i);
 			/* dump_fd_graph("%s (%d) exit(), so %s (%d) is INIT's child now", */
 			/*        p->name, pid, proc_table[i].name, i); */
-			printl("{MM} ((--do_exit():2: proc_table[INIT].p_flags: 0x%x--))\n",
-			       proc_table[INIT].p_flags);
+			// printl("{MM} ((--do_exit():2: proc_table[INIT].p_flags: 0x%x--))\n",
+			    //    proc_table[INIT].p_flags);
 			/* dump_fd_graph("((--do_exit():2: proc_table[INIT].p_flags: 0x%x--))", */
 			/*        proc_table[INIT].p_flags); */
 			if ((proc_table[INIT].p_flags & WAITING) &&

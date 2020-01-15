@@ -57,9 +57,9 @@ PUBLIC void do_wait()
 		if (p_proc->pid_parent == pid) {
 			children++;
 			if (p_proc->p_flags & HANGING) {
-				printl("{MM} ((--do_wait():: %s (%d) is HANGING, "
-				       "so let's clean it up.--))",
-				       p_proc->p_name, i);
+				// printl("{MM} ((--do_wait():: %s (%d) is HANGING, "
+				//        "so let's clean it up.--))",
+				    //    p_proc->p_name, i);
 				/* dump_fd_graph("((--do_wait():: %s (%d) is HANGING, " */
 				/*        "so let's clean it up.--))", */
 				/*        p_proc->name, i); */
@@ -72,8 +72,8 @@ PUBLIC void do_wait()
 	if (children) {
 		/* has children, but no child is HANGING */
 		proc_table[pid].p_flags |= WAITING;
-		printl("{MM} ((--do_wait():: %s (%d) is WAITING for child "
-		       "to exit().--))\n", proc_table[pid].p_name, pid);
+		// printl("{MM} ((--do_wait():: %s (%d) is WAITING for child "
+		//        "to exit().--))\n", proc_table[pid].p_name, pid);
 		/* dump_fd_graph("((--do_wait():: %s (%d) is WAITING for child " */
 		/*        "to exit().--))", proc_table[pid].name, pid); */
 	}

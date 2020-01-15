@@ -101,8 +101,8 @@ PUBLIC int do_fork()
        2. 分配内存*/
 	int child_base = alloc_mem(child_pid, caller_T_size);
 	/* int child_limit = caller_T_limit; */
-	printl("{MM} 0x%x <- 0x%x (0x%x bytes)\n",
-	       child_base, caller_T_base, caller_T_size);
+	// printl("{MM} 0x%x <- 0x%x (0x%x bytes)\n",
+	    //    child_base, caller_T_base, caller_T_size);
 	/* child is a copy of the parent */
 	phys_copy((void*)child_base, (void*)caller_T_base, caller_T_size);
 

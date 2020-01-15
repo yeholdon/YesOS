@@ -181,6 +181,7 @@ enum msgtype {
 #define	PATHNAME	u.m3.m3p1
 #define	FLAGS		u.m3.m3i1
 #define	NAME_LEN	u.m3.m3i2
+#define	BUF_LEN		u.m3.m3i3
 #define	CNT		u.m3.m3i2
 #define	REQUEST		u.m3.m3i2
 #define	PROC_NR		u.m3.m3i3
@@ -279,6 +280,9 @@ enum msgtype {
 #define I_DIRECTORY     0040000
 #define I_CHAR_SPECIAL  0020000
 #define I_NAMED_PIPE	0010000
+
+#define	is_special(m)	((((m) & I_TYPE_MASK) == I_BLOCK_SPECIAL) ||	\
+			 (((m) & I_TYPE_MASK) == I_CHAR_SPECIAL))
 
 #define	NR_DEFAULT_FILE_SECTS	2048 /* 2048 * 512 = 1MB 默认的已经占用的扇区数为2048*/
 

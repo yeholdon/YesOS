@@ -370,7 +370,7 @@ PUBLIC  void    tty_write(TTY *p_tty, char *buf, int len)
 PUBLIC int sys_write(int _unused1, char* buf, int len, PROCESS* p_proc)       // 比write()多一个参数，为了标识调用者进程，将内容输出到进程对应的tty
 {
     // 这么做的原因很可能是printf还可能输出到别处，比如文件，所以为了拓展性加了一层调用
-    tty_write(&tty_table[p_proc->nr_tty], buf, len);
+    tty_write(TTY_FIRST, buf, len);
     return 0;
 }
 
@@ -464,8 +464,8 @@ PUBLIC  int sys_printx(int _unused1, int _unuesd2, char *s, PROCESS *p_proc)
             // 其实因为前面已经判断过 了panic，这里的panic可以不用写的
             continue; // 跳过magic char
         }
-        out_char(tty_table[p_proc->nr_tty].p_console, ch); //正常在对应的console显示
-        
+        // out_char(tty_table[p_proc->nr_tty].p_console, ch); //正常在对应的console显示
+        out_char(TTY_FIRST->p_console, ch);
     }
         
     return 0;

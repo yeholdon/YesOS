@@ -30,9 +30,9 @@ OBJS		= kernel/kernel.o kernel/keyboard.o kernel/start.o kernel/init8259.o  \
 						kernel/tty.o kernel/console.o kernel/systask.o kernel/hd.o \
 						lib/klib.o lib/kliba.o lib/string.o lib/misc.o lib/open.o lib/close.o \
 						lib/read.o lib/write.o lib/printf.o lib/vsprintf.o lib/syslog.o lib/syscall.o  \
-						lib/getpid.o lib/unlink.o lib/fork.o lib/exit.o lib/wait.o \
+						lib/getpid.o lib/unlink.o lib/fork.o lib/exit.o lib/wait.o lib/exec.o lib/stat.o\
 						fs/main.o fs/open.o fs/misc.o fs/read_write.o fs/disklog.o fs/link.o \
-						mm/main.o mm/fork.o mm/exit.o mm/wait.o
+						mm/main.o mm/fork.o mm/exit.o mm/wait.o mm/exec.o
 DASMOUTPUT	= kernel.bin.asm
 
 # All Phony Targets
@@ -134,6 +134,12 @@ lib/exit.o : lib/exit.c
 lib/wait.o : lib/wait.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+lib/exec.o : lib/exec.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+lib/stat.o : lib/stat.c
+	$(CC) $(CFLAGS) -o $@ $<
+
 lib/kliba.o : lib/kliba.asm
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
@@ -196,4 +202,7 @@ mm/exit.o : mm/exit.c
 	$(CC) $(CFLAGS) -o $@ $<
 
 mm/wait.o : mm/wait.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+mm/exec.o : mm/exec.c
 	$(CC) $(CFLAGS) -o $@ $<
