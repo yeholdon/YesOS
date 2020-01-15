@@ -25,12 +25,12 @@ DASMFLAGS	= -D
 # This Program
 YESBOOT	= boot/boot.bin boot/loader.bin
 YESKERNEL	= kernel.bin
-OBJS		= kernel/kernel.o kernel/syscall.o  kernel/keyboard.o kernel/start.o kernel/init8259.o  \
+OBJS		= kernel/kernel.o kernel/keyboard.o kernel/start.o kernel/init8259.o  \
 						kernel/proc.o kernel/global.o kernel/protect.o  kernel/main.o kernel/clock.o \
-						kernel/tty.o kernel/console.o kernel/systask.o \
-						kernel/vsprintf.o kernel/hd.o \
-						lib/klib.o lib/kliba.o lib/string.o lib/misc.o lib/open.o lib/close.o lib/read.o lib/write.o \
-						lib/printf.o lib/vsprintf.o lib/syslog.o lib/getpid.o lib/unlink.o lib/fork.o lib/exit.o lib/wait.o \
+						kernel/tty.o kernel/console.o kernel/systask.o kernel/hd.o \
+						lib/klib.o lib/kliba.o lib/string.o lib/misc.o lib/open.o lib/close.o \
+						lib/read.o lib/write.o lib/printf.o lib/vsprintf.o lib/syslog.o lib/syscall.o  \
+						lib/getpid.o lib/unlink.o lib/fork.o lib/exit.o lib/wait.o \
 						fs/main.o fs/open.o fs/misc.o fs/read_write.o fs/disklog.o fs/link.o \
 						mm/main.o mm/fork.o mm/exit.o mm/wait.o
 DASMOUTPUT	= kernel.bin.asm
@@ -78,9 +78,6 @@ $(YESKERNEL) : $(OBJS)
 kernel/kernel.o : kernel/kernel.asm	
 	$(ASM) $(ASMKFLAGS) -o $@ $<
 
-kernel/syscall.o : kernel/syscall.asm
-	$(ASM) $(ASMKFLAGS) -o $@ $<
-
 kernel/start.o: kernel/start.c 
 	$(CC) $(CFLAGS) -o $@ $<
 
@@ -100,6 +97,9 @@ kernel/protect.o : kernel/protect.c
 
 kernel/clock.o: kernel/clock.c
 	$(CC) $(CFLAGS) -o $@ $<
+
+lib/syscall.o : lib/syscall.asm
+	$(ASM) $(ASMKFLAGS) -o $@ $<
 
 lib/klib.o : lib/klib.c
 	$(CC) $(CFLAGS) -o $@ $<
