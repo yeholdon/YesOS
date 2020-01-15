@@ -241,7 +241,7 @@ void untar(const char * filename)
 		while (bytes_left) {
 			int iobytes = min(chunk, bytes_left);
 			read(fd, buf,
-			     ((iobytes - 1) / SECTOR_SIZE + 1) * SECTOR_SIZE);
+			     ((iobytes - 1) / (u32)SECTOR_SIZE + 1) * SECTOR_SIZE);
 			write(fdout, buf, iobytes);
 			bytes_left -= iobytes;
 		}
@@ -258,7 +258,7 @@ void untar(const char * filename)
  *                                Init:所有进程的祖先进程 
  *****************************************************************************/
 void Init()
-{assert(0);
+{
 	int fd_stdin  = open("/dev_tty0", O_RDWR);
 	assert(fd_stdin  == 0);
 	int fd_stdout = open("/dev_tty0", O_RDWR);
@@ -298,60 +298,60 @@ void Init()
 void TestA()
 {
 
-	int fd;
-	int i, n;
-	const char filename[MAX_FILENAME_LEN+1] = "blah";
-	const char bufw[] = "abcde";
-	const int rd_bytes = 3;
-	char bufr[rd_bytes];
+	// int fd;
+	// int i, n;
+	// const char filename[MAX_FILENAME_LEN+1] = "blah";
+	// const char bufw[] = "abcde";
+	// const int rd_bytes = 3;
+	// char bufr[rd_bytes];
 
-	assert(rd_bytes <= strlen(bufw));
+	// assert(rd_bytes <= strlen(bufw));
 
-	/* create */
-	fd = open(filename, O_CREAT | O_RDWR);
-	assert(fd != -1);
-	printl("File created: %s (fd %d)\n", filename, fd);
+	// /* create */
+	// fd = open(filename, O_CREAT | O_RDWR);
+	// assert(fd != -1);
+	// printl("File created: %s (fd %d)\n", filename, fd);
 
-	/* write */
-	n = write(fd, bufw, strlen(bufw));
-	assert(n == strlen(bufw));
+	// /* write */
+	// n = write(fd, bufw, strlen(bufw));
+	// assert(n == strlen(bufw));
 
-	/* close */
-	close(fd);
+	// /* close */
+	// close(fd);
 
-	/* open */
-	fd = open(filename, O_RDWR);
-	assert(fd != -1);
-	printl("File opened. fd: %d\n", fd);
+	// /* open */
+	// fd = open(filename, O_RDWR);
+	// assert(fd != -1);
+	// printl("File opened. fd: %d\n", fd);
 
-	/* read */
-	n = read(fd, bufr, rd_bytes);
-	assert(n == rd_bytes);
-	bufr[n] = 0;
-	printl("%d bytes read: %s\n", n, bufr);
+	// /* read */
+	// n = read(fd, bufr, rd_bytes);
+	// assert(n == rd_bytes);
+	// bufr[n] = 0;
+	// printl("%d bytes read: %s\n", n, bufr);
 
-	/* close */
-	close(fd);
+	// /* close */
+	// close(fd);
 
-	char * filenames[] = {"/foo", "/bar", "/baz"};
+	// char * filenames[] = {"/foo", "/bar", "/baz"};
 
-	/* create files */
-	for (i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
-		fd = open(filenames[i], O_CREAT | O_RDWR);
-		assert(fd != -1);
-		printl("File created: %s (fd %d)\n", filenames[i], fd);
-		close(fd);
-	}
+	// /* create files */
+	// for (i = 0; i < sizeof(filenames) / sizeof(filenames[0]); i++) {
+	// 	fd = open(filenames[i], O_CREAT | O_RDWR);
+	// 	assert(fd != -1);
+	// 	printl("File created: %s (fd %d)\n", filenames[i], fd);
+	// 	close(fd);
+	// }
 
-	char * rfilenames[] = {"/bar", "/foo", "/baz", "/dev_tty0"};
+	// char * rfilenames[] = {"/bar", "/foo", "/baz", "/dev_tty0"};
 
-	/* remove files */
-	for (i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
-		if (unlink(rfilenames[i]) == 0)
-			printl("File removed: %s\n", rfilenames[i]);
-		else
-			printl("Failed to remove file: %s\n", rfilenames[i]);
-	}
+	// /* remove files */
+	// for (i = 0; i < sizeof(rfilenames) / sizeof(rfilenames[0]); i++) {
+	// 	if (unlink(rfilenames[i]) == 0)
+	// 		printl("File removed: %s\n", rfilenames[i]);
+	// 	else
+	// 		printl("Failed to remove file: %s\n", rfilenames[i]);
+	// }
 
 
 
@@ -364,33 +364,33 @@ void TestA()
 void TestB()
 {
 
-	char tty_name[] = "/dev_tty1";
+	// char tty_name[] = "/dev_tty1";
 
-	int fd_stdin  = open(tty_name, O_RDWR);
-	assert(fd_stdin  == 0);
-	int fd_stdout = open(tty_name, O_RDWR);
-	assert(fd_stdout == 1);
+	// int fd_stdin  = open(tty_name, O_RDWR);
+	// assert(fd_stdin  == 0);
+	// int fd_stdout = open(tty_name, O_RDWR);
+	// assert(fd_stdout == 1);
 
-	char rdbuf[128];
-	// while(1){
-	// 	printl("B");
-	// 	milli_delay(2000);
+	// char rdbuf[128];
+	// // while(1){
+	// // 	printl("B");
+	// // 	milli_delay(2000);
+	// // }
+	// while (1) {  
+	// 	printf("[Ye's OS-TTY #1]-$ ");
+	// 	int r = read(fd_stdin, rdbuf, 70);
+	// 	rdbuf[r] = 0;
+
+	// 	if (strcmp(rdbuf, "hello") == 0)
+	// 		printf("hello world!\n");
+	// 	else
+	// 		if (rdbuf[0])
+	// 			printf("{%s}\n", rdbuf);
 	// }
-	while (1) {  
-		printf("[Ye's OS-TTY #1]-$ ");
-		int r = read(fd_stdin, rdbuf, 70);
-		rdbuf[r] = 0;
-
-		if (strcmp(rdbuf, "hello") == 0)
-			printf("hello world!\n");
-		else
-			if (rdbuf[0])
-				printf("{%s}\n", rdbuf);
-	}
 
 
 
-	spin("TestB\n");
+	spin("TestB");
 	// assert(0); /* never arrive here */
 }
 
@@ -401,35 +401,34 @@ void TestC()
 {
 
 
-	char tty_name[] = "/dev_tty2";
+	// char tty_name[] = "/dev_tty2";
 
-	int fd_stdin  = open(tty_name, O_RDWR);
-	// printl("fd_stdin:%d\n", fd_stdin);
-	assert(fd_stdin  == 0);
-	int fd_stdout = open(tty_name, O_RDWR);
-	// printl("fd_stdout:%d\n", fd_stdout);
-	assert(fd_stdout == 1);
+	// int fd_stdin  = open(tty_name, O_RDWR);
+	// // printl("fd_stdin:%d\n", fd_stdin);
+	// assert(fd_stdin  == 0);
+	// int fd_stdout = open(tty_name, O_RDWR);
+	// // printl("fd_stdout:%d\n", fd_stdout);
+	// assert(fd_stdout == 1);
 
-	char rdbuf[128];
-	// while(1){
-	// 	printl("C");
-	// 	milli_delay(2000);
+	// char rdbuf[128];
+	// // while(1){
+	// // 	printl("C");
+	// // 	milli_delay(2000);
+	// // }
+	// while (1) {
+	// 	printf("[Ye's OS-TTY #2]-$ ");
+	// 	int r = read(fd_stdin, rdbuf, 70);
+	// 	rdbuf[r] = 0;
+
+	// 	if (strcmp(rdbuf, "hello") == 0)
+	// 		printf("hello world!\n");
+	// 	else
+	// 		if (rdbuf[0])
+	// 			printf("{%s}\n", rdbuf);
 	// }
-	while (1) {
-		printf("[Ye's OS-TTY #2]-$ ");
-		int r = read(fd_stdin, rdbuf, 70);
-		rdbuf[r] = 0;
 
-		if (strcmp(rdbuf, "hello") == 0)
-			printf("hello world!\n");
-		else
-			if (rdbuf[0])
-				printf("{%s}\n", rdbuf);
-	}
-
-
-		assert(0); /* never arrive here */
 	spin("TestC");
+	assert(0); /* never arrive here */
 }
 
 

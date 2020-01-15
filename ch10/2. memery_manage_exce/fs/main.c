@@ -179,11 +179,11 @@ PRIVATE void mkfs()
 	printl("dev size: 0x%x sectors\n", geo.size);
 	
 	// 准备super block结构信息，并写入 硬盘分区的第一个扇区
-	u32 bits_per_sector = SECTOR_SIZE * 8;
+	int bits_per_sector = SECTOR_SIZE * 8;
 	struct super_block sb;
 	sb.magic = MAGIC_V1;
 	sb.nr_inodes = bits_per_sector;		// 4096个inode
-	sb.nr_inode_sects = sb.nr_inodes * INODE_SIZE / SECTOR_SIZE;
+	sb.nr_inode_sects = sb.nr_inodes * INODE_SIZE / (u32)SECTOR_SIZE;
 	sb.nr_sects = geo.size;
 	sb.nr_imap_sects = 1;			// 因为imap只占一个扇区，所以总的inode数也只有bite_per_sector
 	sb.nr_smap_sects = sb.nr_sects / bits_per_sector + 1; // 一个扇区一位
@@ -243,7 +243,7 @@ PRIVATE void mkfs()
 	 *                                `-------- for `/'
 	 */
 	int i;
-	for (i = 0; i < nr_sects >> 3; i++)
+	for (i = 0; i < nr_sects / (u32)8; i++)
 		fsbuf[i] = 0xFF;
 
 	for (int j = 0; j < nr_sects % 8; j++)
@@ -264,10 +264,10 @@ PRIVATE void mkfs()
 		sb.n_1st_sect + 1; /* sect M <-> bit (M - sb.n_1stsect + 1) */
 	int bit_off_in_sect = bit_offset % (SECTOR_SIZE * 8);
 	int bit_left = INSTALL_NR_SECTS;
-	int cur_sect = bit_offset / (SECTOR_SIZE * 8);
+	int cur_sect = bit_offset / (u32)(SECTOR_SIZE * 8);
 	RD_SECT(ROOT_DEV, 2 + sb.nr_imap_sects + cur_sect);
 	while (bit_left) {
-		int byte_off = bit_off_in_sect / 8;
+		int byte_off = bit_off_in_sect / (u32)8;
 		/* this line is ineffecient in a loop, but I don't care */
 		fsbuf[byte_off] |= 1 << (bit_off_in_sect % 8);
 		bit_left--;
