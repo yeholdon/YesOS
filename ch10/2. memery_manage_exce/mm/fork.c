@@ -18,7 +18,6 @@
 #include "proto.h"
 
 
-PRIVATE void cleanup(struct s_proc * proc);
 
 /*****************************************************************************
  *                                do_fork

@@ -194,7 +194,10 @@ PUBLIC int do_close()
 {
 	int fd = fs_msg.FD;
 	put_inode(pcaller->filp[fd]->fd_inode);
-	pcaller->filp[fd]->fd_inode = 0;
+	if (--pcaller->filp[fd]->fd_cnt == 0)		// 添加了fd_cnt就要把所有用到filp[]结构体的地方都过一遍
+	{
+		pcaller->filp[fd]->fd_inode = 0;
+	}
 	pcaller->filp[fd] = 0;
 
 	return 0;

@@ -34,10 +34,14 @@ get_ticks_syscall_version:
 ;                          void write(char* buf, int len):
 ; ====================================================================================
 write_syscall_version:          ; 这里只管传参数即可，实现主体用C语言
+    push edx
+    push ecx
     mov     eax, _NR_write
-    mov     edx, [esp + 4]
-    mov     ecx, [esp + 8]
+    mov     edx, [esp + 8 + 4]
+    mov     ecx, [esp + 8 + 8]
     int     INT_VECTOR_SYS_CALL
+    pop ecx
+    pop edx
     ret
 
 ; ====================================================================================
@@ -45,11 +49,20 @@ write_syscall_version:          ; 这里只管传参数即可，实现主体用C
 ; ====================================================================================
 ; Never call sendrec() directly, call send_recv() instead.
 sendrec:
+    push ebx
+    push ecx
+    push edx
+
     mov eax, _NR_sendrec
-    mov ebx, [esp + 4]
-    mov ecx, [esp + 8]
-    mov edx, [esp + 12]
+    mov ebx, [esp + 12 + 4]
+    mov ecx, [esp + 12 +  8]
+    mov edx, [esp + 12 + 12]
     int INT_VECTOR_SYS_CALL
+
+	pop	edx
+	pop	ecx
+	pop	ebx
+
     ret
 
 
@@ -57,7 +70,9 @@ sendrec:
 ;                          void printx(char* s);
 ; ====================================================================================
 printx:
+    push edx
 	mov	eax, _NR_printx
-	mov	edx, [esp + 4]
+	mov	edx, [esp + 4 + 4]
 	int	INT_VECTOR_SYS_CALL
+    pop edx
 	ret

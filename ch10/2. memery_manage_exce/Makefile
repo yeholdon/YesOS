@@ -18,7 +18,7 @@ LD		= ld
 ASMBFLAGS	= -I boot/include/
 ASMKFLAGS	= -I include/ -I include/sys/ -f elf
 # CFLAGS		= -m32 -I include/ -c -fno-builtin -fno-stack-protector
-CFLAGS		= -m32 -I include/ -I include/sys/ -c -fno-builtin -fno-stack-protector
+CFLAGS		= -m32 -O0 -I include/ -I include/sys/ -c -fno-builtin -fno-stack-protector 
 LDFLAGS		= -m elf_i386 -s -Ttext $(ENTRYPOINT) -Map krnl.map
 DASMFLAGS	= -D
 

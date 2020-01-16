@@ -8,6 +8,11 @@
 
 int main(int argc, char * argv[])
 {
+    // int argcnt = argc;
+    // char **argvec = argv ;
+    // printf("argc:%d\n", argcnt);
+    // printf("argc:%d", argcnt);
+    
 	int i;
 	for (i = 1; i < argc; i++)
 		printf("%s%s", i == 1 ? "" : " ", argv[i]);

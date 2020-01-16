@@ -342,10 +342,10 @@ void Init()
 	char * tty_list[] = {"/dev_tty1", "/dev_tty2"};
 
 	int i;
-	for (i = 0; i < sizeof(tty_list) / sizeof(tty_list[0]); i++) {
+	for (i = 0; i < sizeof(tty_list) / sizeof(tty_list[0] ) ; i++) {
 		int pid = fork();
 		if (pid != 0) { /* parent process */
-			// printf("[parent is running, child pid:%d]\n", pid);
+			printf("[parent is running, child pid:%d]\n", pid);
 		}
 		else {	/* child process */
 			// printf("[child is running, pid:%d]\n", getpid());
@@ -353,7 +353,7 @@ void Init()
 			close(fd_stdout);
 			
 			shabby_shell(tty_list[i]);
-			assert(0);
+			// assert(0);
 		}
 	}
 
