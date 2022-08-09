@@ -4,4 +4,4 @@ A Tiny Operating System referring to "Implementation of an operating system, For
 
 # YesOS running interface
 
-![YesOS运行截图](./pics/20220809114549.jpg)
+![YesOS运行截图](https://raw.githubusercontent.com/yeholdon/YesOS/master/pics/20220809114549.jpg)
